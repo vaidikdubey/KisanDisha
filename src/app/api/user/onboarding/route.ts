@@ -39,6 +39,7 @@ export async function POST(req: Request): Promise<NextResponse> {
                 cropPreferences: cropPreferences || [],
                 mobileNumber: mobileNumber || null,
                 isOnboarding: true,
+                emailVerified: true,
             },
         });
 

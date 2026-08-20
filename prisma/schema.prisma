@@ -27,7 +27,6 @@ model User {
   provider                AuthProvider @default(CREDENTIALS)
   emailVerified           Boolean      @default(false)
   emailVerificationToken  String?
-  emailVerificationExpiry DateTime?
   state                   String? //Optional for initial OAuth
   district                String? //Optional for initial OAuth
   cropPreferences         String[]     @default([])
