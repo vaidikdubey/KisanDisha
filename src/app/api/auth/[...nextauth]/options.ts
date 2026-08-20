@@ -31,10 +31,10 @@ export const authOptions: NextAuthOptions = {
                             }
                         })
 
-                        if (!user) throw new Error("User not found")
+                        if (!user || !user.password) throw new Error("Invalid credentials or account signed up via Google")
 
                         const enteredPassword = credentials.password
-                        const isPasswordCorrect = await bcrypt.compare(enteredPassword, user.password!)
+                        const isPasswordCorrect = await bcrypt.compare(enteredPassword, user.password)
 
 
                         if (isPasswordCorrect) { 
@@ -54,22 +54,10 @@ export const authOptions: NextAuthOptions = {
 
     callbacks: {
         async signIn({ account, profile }) { 
-            if (account?.provider !== "credentials") { 
-                try {
-                    const user = await prisma.user.findUnique({
-                        where: {
-                            email: profile?.email
-                        }
-                    })
-
-                    //If new user, we redirect them to sign-up page
-                    if (!user) return `/sign-up`
-
-                    return true
-                } catch (error) {
-                    console.error("Error signing in user with google", error)
-                    return false
-                }
+            if (account?.provider === "google") {
+                // Let PrismaAdapter automatically create the User & Account records in the DB.
+                // Onboarding checks (like state/district completion) will be handled via Middleware or inside pages/components rather than blocking sign-in here.
+                return true
             }
 
             return true
@@ -77,17 +65,7 @@ export const authOptions: NextAuthOptions = {
 
         async jwt({ token, user, account }) { 
             if (user) { 
-                //If user sign-in through google we find id for the user and attach in token
-                if (account?.provider !== "credentials") { 
-                    const dbUser = await prisma.user.findUnique({
-                        where: {
-                            email: user.email!
-                        }
-                    })
-
-                    if(dbUser) token.id = dbUser.id.toString()
-                }
-                else token.id = user.id
+                token.id = user.id
             }
             return token
         },
@@ -100,7 +78,8 @@ export const authOptions: NextAuthOptions = {
     },
 
     pages: {
-        signIn: "/sign-in"
+        signIn: "/sign-in",
+        newUser: "/onboarding", // Built-in NextAuth redirect for newly registered OAuth users
     },
 
     session: {

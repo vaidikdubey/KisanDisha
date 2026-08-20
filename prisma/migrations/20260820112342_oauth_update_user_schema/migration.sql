@@ -1,0 +1,5 @@
+-- AlterTable
+ALTER TABLE "User" ALTER COLUMN "password" DROP NOT NULL,
+ALTER COLUMN "state" DROP NOT NULL,
+ALTER COLUMN "district" DROP NOT NULL,
+ALTER COLUMN "cropPreferences" SET DEFAULT ARRAY[]::TEXT[];
