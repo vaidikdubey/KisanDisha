@@ -30,9 +30,12 @@ model User {
   emailVerificationExpiry DateTime?
   state                   String? //Optional for initial OAuth
   district                String? //Optional for initial OAuth
-  cropPreferences         String[] @default([])
-  createdAt               DateTime     @default(now())
-  updatedAt               DateTime     @updatedAt
+  cropPreferences         String[]     @default([])
+
+  isOnboarding Boolean @default(false) //Custom flag for onboarding check for OAuth
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   //For  NextAuth's Prisma adapter
   accounts Account[]
