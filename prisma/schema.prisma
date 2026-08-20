@@ -22,7 +22,7 @@ model User {
   id                      String       @id @default(uuid())
   name                    String
   email                   String       @unique
-  password                String? //Null for OAuth Users
+  password                String
   mobileNumber            String?
   provider                AuthProvider @default(CREDENTIALS)
   emailVerified           Boolean      @default(false)
