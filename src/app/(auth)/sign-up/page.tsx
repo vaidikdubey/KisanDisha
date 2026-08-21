@@ -1,3 +1,5 @@
+'use client'
+
 const SignUpPage = () => {
   return (
     <div>SignUpPage</div>
