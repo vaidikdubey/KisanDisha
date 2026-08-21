@@ -1,9 +1,8 @@
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
 
-export async function POST(req: Request): Promise<NextResponse> {
+export async function POST(req: Request): Promise<Response> {
     try {
         const {
             name,
@@ -25,7 +24,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         });
 
         if (existingUser) {
-            return NextResponse.json(
+            return Response.json(
                 {
                     success: false,
                     message: "User already exists with this email.",
@@ -53,18 +52,17 @@ export async function POST(req: Request): Promise<NextResponse> {
         });
 
         if (!user)
-            return NextResponse.json(
+            return Response.json(
                 {
                     success: false,
-                    message:
-                        "Server error creating new user. Please try again later",
+                    error: "Server error creating new user. Please try again later",
                 },
                 { status: 500 },
             );
 
         await sendVerificationEmail(name, email, code);
 
-        return NextResponse.json(
+        return Response.json(
             {
                 success: true,
                 message: "User registered",
@@ -73,10 +71,10 @@ export async function POST(req: Request): Promise<NextResponse> {
         );
     } catch (error) {
         console.error("Error registering user", error);
-        return NextResponse.json(
+        return Response.json(
             {
                 success: false,
-                message: "Error registering user",
+                error: "Error registering user",
             },
             { status: 500 },
         );
