@@ -11,6 +11,8 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import Link from "next/link";
 import gsap from "gsap";
+import { StateRecord } from "@/types/States";
+import { DistrictRecord } from "@/types/Districts";
 
 //ShadCn components
 import { Button } from "@/components/ui/button";
@@ -29,7 +31,30 @@ import {
     FieldLabel,
     FieldError,
 } from "@/components/ui/field";
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectLabel,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ArrowRight, Eye, EyeOff, ArrowLeft } from "lucide-react";
+
+const cropsList = [
+    { label: "Rice", value: "Rice / धान" },
+    { label: "Wheat", value: "Wheat / गेहूं" },
+    { label: "Sugarcane", value: "Sugarcane / गन्ना" },
+    { label: "Cotton", value: "Cotton / कपास" },
+    { label: "Soybean", value: "Soybean / सोयाबीन" },
+    { label: "Mustard", value: "Mustard / सरसों" },
+    { label: "Chana (Bengal Gram)", value: "Chana (Bengal Gram) / चना" },
+    { label: "Maize (Corn)", value: "Maize (Corn) / मक्का" },
+    { label: "Bajra (Pearl Millet)", value: "Bajra (Pearl Millet) / बाजरा" },
+    { label: "Potato", value: "Potato / आलू" },
+];
 
 const SignUpPage = () => {
     const router = useRouter();
@@ -39,6 +64,8 @@ const SignUpPage = () => {
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
     const [confirmPasswordVisible, setConfirmPasswordVisible] =
         useState<boolean>(false);
+    const [statesList, setStatesList] = useState<StateRecord[]>([]);
+    const [districtsList, setDistrictsList] = useState<DistrictRecord[]>([]);
 
     const form = useForm<z.infer<typeof signUpSchema>>({
         resolver: zodResolver(signUpSchema),
@@ -54,19 +81,19 @@ const SignUpPage = () => {
         },
     });
 
-  //Validation for both steps of the page
-  const handleNext = async () => {
-    const isStep1Valid = await form.trigger([
-        "name",
-        "email",
-      "password",
-        "confirmPassword"
-    ])
+    //Validation for both steps of the page
+    const handleNext = async () => {
+        const isStep1Valid = await form.trigger([
+            "name",
+            "email",
+            "password",
+            "confirmPassword",
+        ]);
 
-    if(isStep1Valid) setStep(2)
-  }
+        if (isStep1Valid) setStep(2);
+    };
 
-  const handleBack = () => setStep(1)
+    const handleBack = () => setStep(1);
 
     const onSubmit = async (data: z.infer<typeof signUpSchema>) => {
         setIsSubmitting(true);
@@ -125,19 +152,28 @@ const SignUpPage = () => {
         };
     }, []);
 
-  async function fetchStates() {
-    const response = await axios.get(`https://api.data.gov.in/resource/a71e60f0-a21d-43de-a6c5-fa5d21600cdb?api-key=${process.env.LGD_STATES_API_KEY}&format=json`, { headers: { "Accept": "application/json" } });
+    async function fetchStates() {
+        const response = await axios.get("/api/get-states");
 
-    response.data?.records.forEach((record: {state_name_english: string}, idx: number) => console.log(`${idx + 1}: `, record.state_name_english))
-  }
+        setStatesList(response.data.data?.states);
+    }
 
-  useEffect(() => {
-      fetchStates()
-    }, [])
+    async function fetchDistricts(stateCode: number) {
+        const response = await axios.get(
+            `/api/get-districts?state=${stateCode}`,
+        );
+
+        setDistrictsList(response.data.data?.districts);
+    }
+
+    useEffect(() => {
+        //eslint-disable-next-line
+        fetchStates();
+    }, []);
 
     return (
-        <div className="h-full w-full flex justify-center items-center">
-            <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-black rounded-lg shadow-md">
+        <div className="h-full w-full flex justify-center items-center bg-transparent backdrop-blur-2xl rounded-md">
+            <div className="w-full max-w-md p-8 space-y-8 rounded-lg shadow-md">
                 <div className="text-center">
                     {/* Flipping Card */}
                     <div
@@ -157,10 +193,10 @@ const SignUpPage = () => {
                 </div>
 
                 {/* Signup Form */}
-                <Card className="w-full sm:max-w-md tracking-tight">
+                <Card className="w-full gap-0 sm:max-w-md tracking-tight bg-transparent backdrop-blur-xl rounded-xl z-10">
                     <CardHeader>
                         <div className="flex justify-between items-center">
-                            <CardTitle>Create your account</CardTitle>
+                            <CardTitle>Create account</CardTitle>
                             <span className="text-xs font-semibold px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">
                                 Step {step} of 2
                             </span>
@@ -172,7 +208,10 @@ const SignUpPage = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <form id="signup-form" onSubmit={form.handleSubmit(onSubmit)}>
+                        <form
+                            id="signup-form"
+                            onSubmit={form.handleSubmit(onSubmit)}
+                        >
                             <FieldGroup>
                                 {step === 1 && (
                                     <>
@@ -180,18 +219,28 @@ const SignUpPage = () => {
                                             name="name"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-name">
                                                         Name
                                                     </FieldLabel>
                                                     <Input
                                                         {...field}
                                                         id="signup-form-name"
-                                                        aria-invalid={fieldState.invalid}
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
                                                         placeholder="Ravi Kishore"
                                                     />
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -200,18 +249,28 @@ const SignUpPage = () => {
                                             name="email"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-email">
                                                         Email
                                                     </FieldLabel>
                                                     <Input
                                                         {...field}
                                                         id="signup-form-email"
-                                                        aria-invalid={fieldState.invalid}
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
                                                         placeholder="ravi.kishore@gmail.com"
                                                     />
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -220,32 +279,60 @@ const SignUpPage = () => {
                                             name="password"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-password">
                                                         Password
                                                     </FieldLabel>
                                                     <div className="flex justify-center items-center gap-1">
                                                         <Input
-                                                            type={passwordVisible ? "text" : "password"}
+                                                            type={
+                                                                passwordVisible
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
                                                             {...field}
                                                             id="signup-form-password"
-                                                            aria-invalid={fieldState.invalid}
+                                                            aria-invalid={
+                                                                fieldState.invalid
+                                                            }
                                                             placeholder="Strong Password"
                                                         />
                                                         {passwordVisible ? (
                                                             <EyeOff
                                                                 className="cursor-pointer"
-                                                                onClick={() => setPasswordVisible((prev) => !prev)}
+                                                                onClick={() =>
+                                                                    setPasswordVisible(
+                                                                        (
+                                                                            prev,
+                                                                        ) =>
+                                                                            !prev,
+                                                                    )
+                                                                }
                                                             />
                                                         ) : (
                                                             <Eye
                                                                 className="cursor-pointer"
-                                                                onClick={() => setPasswordVisible((prev) => !prev)}
+                                                                onClick={() =>
+                                                                    setPasswordVisible(
+                                                                        (
+                                                                            prev,
+                                                                        ) =>
+                                                                            !prev,
+                                                                    )
+                                                                }
                                                             />
                                                         )}
                                                     </div>
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -254,32 +341,60 @@ const SignUpPage = () => {
                                             name="confirmPassword"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-confirm-password">
                                                         Confirm Password
                                                     </FieldLabel>
                                                     <div className="flex justify-center items-center gap-1">
                                                         <Input
-                                                            type={confirmPasswordVisible ? "text" : "password"}
+                                                            type={
+                                                                confirmPasswordVisible
+                                                                    ? "text"
+                                                                    : "password"
+                                                            }
                                                             {...field}
                                                             id="signup-form-confirm-password"
-                                                            aria-invalid={fieldState.invalid}
+                                                            aria-invalid={
+                                                                fieldState.invalid
+                                                            }
                                                             placeholder="Repeat Your Password"
                                                         />
                                                         {confirmPasswordVisible ? (
                                                             <EyeOff
                                                                 className="cursor-pointer"
-                                                                onClick={() => setConfirmPasswordVisible((prev) => !prev)}
+                                                                onClick={() =>
+                                                                    setConfirmPasswordVisible(
+                                                                        (
+                                                                            prev,
+                                                                        ) =>
+                                                                            !prev,
+                                                                    )
+                                                                }
                                                             />
                                                         ) : (
                                                             <Eye
                                                                 className="cursor-pointer"
-                                                                onClick={() => setConfirmPasswordVisible((prev) => !prev)}
+                                                                onClick={() =>
+                                                                    setConfirmPasswordVisible(
+                                                                        (
+                                                                            prev,
+                                                                        ) =>
+                                                                            !prev,
+                                                                    )
+                                                                }
                                                             />
                                                         )}
                                                     </div>
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -293,18 +408,28 @@ const SignUpPage = () => {
                                             name="mobileNumber"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-number">
                                                         Mobile Number
                                                     </FieldLabel>
                                                     <Input
                                                         {...field}
                                                         id="signup-form-number"
-                                                        aria-invalid={fieldState.invalid}
+                                                        aria-invalid={
+                                                            fieldState.invalid
+                                                        }
                                                         placeholder="9876543210"
                                                     />
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -313,18 +438,73 @@ const SignUpPage = () => {
                                             name="state"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-state">
                                                         State
                                                     </FieldLabel>
-                                                    <Input
-                                                        {...field}
-                                                        id="signup-form-state"
-                                                        aria-invalid={fieldState.invalid}
-                                                        placeholder="Punjab"
-                                                    />
+                                                    <Select
+                                                        defaultValue="Select Your State"
+                                                        value={field.value}
+                                                        onValueChange={(
+                                                            selectedState,
+                                                        ) => {
+                                                            field.onChange(
+                                                                selectedState,
+                                                            );
+
+                                                            const targetState =
+                                                                statesList.find(
+                                                                    (s) =>
+                                                                        s.state_name_english ===
+                                                                        selectedState,
+                                                                );
+                                                            if (targetState)
+                                                                fetchDistricts(
+                                                                    targetState.state_code,
+                                                                );
+                                                        }}
+                                                        items={statesList.map(
+                                                            (state) => ({
+                                                                label: state.state_name_english.toLocaleUpperCase(),
+                                                                value: state.state_name_english,
+                                                            }),
+                                                        )}
+                                                    >
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder="Select Your State" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectGroup>
+                                                                <SelectLabel>
+                                                                    States
+                                                                </SelectLabel>
+                                                                {statesList.map(
+                                                                    (state) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                state.state_code
+                                                                            }
+                                                                            value={
+                                                                                state.state_name_english
+                                                                            }
+                                                                        >
+                                                                            {state.state_name_english.toLocaleUpperCase()}
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectGroup>
+                                                        </SelectContent>
+                                                    </Select>
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -333,18 +513,133 @@ const SignUpPage = () => {
                                             name="district"
                                             control={form.control}
                                             render={({ field, fieldState }) => (
-                                                <Field data-invalid={fieldState.invalid}>
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
                                                     <FieldLabel htmlFor="signup-form-district">
                                                         District
                                                     </FieldLabel>
-                                                    <Input
-                                                        {...field}
-                                                        id="signup-form-district"
-                                                        aria-invalid={fieldState.invalid}
-                                                        placeholder="Ludhiana"
-                                                    />
+                                                    <Select
+                                                        defaultValue="Select Your District"
+                                                        value={field.value}
+                                                        onValueChange={
+                                                            field.onChange
+                                                        }
+                                                        items={districtsList.map(
+                                                            (district) => ({
+                                                                label: district.district_name_english.toLocaleUpperCase(),
+                                                                value: district.district_name_english,
+                                                            }),
+                                                        )}
+                                                    >
+                                                        <SelectTrigger className="w-full">
+                                                            <SelectValue placeholder="Select Your District" />
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectGroup>
+                                                                <SelectLabel>
+                                                                    Districts
+                                                                </SelectLabel>
+                                                                {districtsList.map(
+                                                                    (
+                                                                        district,
+                                                                    ) => (
+                                                                        <SelectItem
+                                                                            key={
+                                                                                district.district_code
+                                                                            }
+                                                                            value={
+                                                                                district.district_name_english
+                                                                            }
+                                                                        >
+                                                                            {district.district_name_english.toLocaleUpperCase()}
+                                                                        </SelectItem>
+                                                                    ),
+                                                                )}
+                                                            </SelectGroup>
+                                                        </SelectContent>
+                                                    </Select>
                                                     {fieldState.invalid && (
-                                                        <FieldError errors={[fieldState.error]} />
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
+                                                    )}
+                                                </Field>
+                                            )}
+                                        />
+                                        {/* Crop Preferences Multi-Select Checkboxes */}
+                                        <Controller
+                                            name="cropPreferences"
+                                            control={form.control}
+                                            render={({ field, fieldState }) => (
+                                                <Field
+                                                    data-invalid={
+                                                        fieldState.invalid
+                                                    }
+                                                >
+                                                    <FieldLabel>
+                                                        Preferred Crops
+                                                    </FieldLabel>
+                                                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 border rounded-md">
+                                                        {cropsList.map(
+                                                            (crop) => (
+                                                                <label
+                                                                    key={
+                                                                        crop.value
+                                                                    }
+                                                                    className="flex items-center gap-2 text-sm cursor-pointer"
+                                                                >
+                                                                    <Checkbox
+                                                                        checked={field.value?.includes(
+                                                                            crop.value,
+                                                                        )}
+                                                                        onCheckedChange={(
+                                                                            checked,
+                                                                        ) => {
+                                                                            return checked
+                                                                                ? field.onChange(
+                                                                                      [
+                                                                                          ...(field.value ||
+                                                                                              []),
+                                                                                          crop.value,
+                                                                                      ],
+                                                                                  )
+                                                                                : field.onChange(
+                                                                                      field.value?.filter(
+                                                                                          (
+                                                                                              v,
+                                                                                          ) =>
+                                                                                              v !==
+                                                                                              crop.value,
+                                                                                      ),
+                                                                                  );
+                                                                        }}
+                                                                    />
+                                                                    <span>
+                                                                        {
+                                                                            crop.value
+                                                                        }
+                                                                    </span>
+                                                                </label>
+                                                            ),
+                                                        )}
+                                                    </div>
+                                                    <div className="text-white">
+                                                        <span className="font-semibold">
+                                                            Selected:
+                                                        </span>{" "}
+                                                        {field.value.join(", ")}
+                                                    </div>
+                                                    {fieldState.invalid && (
+                                                        <FieldError
+                                                            errors={[
+                                                                fieldState.error,
+                                                            ]}
+                                                        />
                                                     )}
                                                 </Field>
                                             )}
@@ -354,7 +649,7 @@ const SignUpPage = () => {
                             </FieldGroup>
                         </form>
                     </CardContent>
-                    <CardFooter className="flex flex-col gap-3">
+                    <CardFooter className="flex flex-col gap-3 mt-3">
                         <div className="flex w-full gap-2">
                             {step === 2 && (
                                 <Button
@@ -362,7 +657,7 @@ const SignUpPage = () => {
                                     variant="outline"
                                     onClick={handleBack}
                                     disabled={isSubmitting}
-                                    className="w-1/2"
+                                    className="w-1/2 rounded-md"
                                 >
                                     <ArrowLeft className="mr-1 h-4 w-4" /> Back
                                 </Button>
@@ -372,7 +667,7 @@ const SignUpPage = () => {
                                 <Button
                                     type="button"
                                     onClick={handleNext}
-                                    className="w-full flex items-center justify-center gap-2"
+                                    className="w-full flex items-center justify-center gap-2 rounded-md"
                                 >
                                     Next <ArrowRight className="h-4 w-4" />
                                 </Button>
@@ -381,7 +676,7 @@ const SignUpPage = () => {
                                     type="submit"
                                     form="signup-form"
                                     disabled={isSubmitting}
-                                    className="w-1/2 flex items-center justify-center gap-2"
+                                    className="w-1/2 flex items-center justify-center gap-2 rounded-md"
                                 >
                                     {isSubmitting ? (
                                         <>
