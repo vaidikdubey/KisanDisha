@@ -38,7 +38,7 @@ export async function POST(req: Request): Promise<Response> {
                 cropPreferences: cropPreferences || [],
                 mobileNumber: mobileNumber || null,
                 isOnboarding: true,
-                emailVerified: true,
+                provider: "GOOGLE",
             },
         });
 

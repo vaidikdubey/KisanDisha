@@ -13,6 +13,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { StateRecord } from "@/types/States";
 import { DistrictRecord } from "@/types/Districts";
+import { signIn } from "next-auth/react";
 
 //ShadCn components
 import { Button } from "@/components/ui/button";
@@ -42,7 +43,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ArrowRight, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import { signIn } from "next-auth/react";
 
 const cropsList = [
     { label: "Rice", value: "Rice / धान" },

@@ -1,20 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getToken } from "next-auth/jwt"
+import { getToken } from "next-auth/jwt";
 
-export async function proxy(req: NextRequest) { 
-    const token = await getToken({ req })
-    const url = req.nextUrl
+export async function proxy(req: NextRequest) {
+    const token = await getToken({ req });
+    const url = req.nextUrl;
 
-    if (token && (
-        url.pathname === "/" ||
-        url.pathname.startsWith("/sign-in") ||
-        url.pathname.startsWith("/sign-up") ||
-        url.pathname.startsWith("/verify")
-    )) return NextResponse.redirect(new URL("/home", req.url))
+    if (
+        token &&
+        (url.pathname === "/" ||
+            url.pathname.startsWith("/sign-in") ||
+            url.pathname.startsWith("/sign-up") ||
+            url.pathname.startsWith("/onboarding"))
+    )
+        return NextResponse.redirect(new URL("/home", req.url));
 
-    if (!token && url.pathname.startsWith("/home")) return NextResponse.redirect(new URL("/sign-in", req.url))
+    if (!token && url.pathname.startsWith("/home"))
+        return NextResponse.redirect(new URL("/sign-in", req.url));
 
-        return NextResponse.next()
+    return NextResponse.next();
 }
 
 export const config = {
@@ -23,6 +26,6 @@ export const config = {
         "/sign-up",
         "/",
         "/home/:path*",
-        "/verify/:path*"
-    ]
-}
+        "/onboarding/:path*",
+    ],
+};
