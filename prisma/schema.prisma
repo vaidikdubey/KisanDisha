@@ -25,8 +25,7 @@ model User {
   password                String? //Optional for OAuth
   mobileNumber            String?
   provider                AuthProvider @default(CREDENTIALS)
-  emailVerified           Boolean      @default(false)
-  emailVerificationToken  String?
+  emailVerified           DateTime?
   state                   String? //Optional for initial OAuth
   district                String? //Optional for initial OAuth
   cropPreferences         String[]     @default([])
