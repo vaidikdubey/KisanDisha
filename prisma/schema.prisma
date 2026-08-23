@@ -19,16 +19,18 @@ enum AuthProvider {
 }
 
 model User {
-  id                      String       @id @default(uuid())
-  name                    String
-  email                   String       @unique
-  password                String? //Optional for OAuth
-  mobileNumber            String?
-  provider                AuthProvider @default(CREDENTIALS)
-  emailVerified           DateTime?
-  state                   String? //Optional for initial OAuth
-  district                String? //Optional for initial OAuth
-  cropPreferences         String[]     @default([])
+  id                     String       @id @default(uuid())
+  name                   String
+  email                  String       @unique
+  password               String? //Optional for OAuth
+  mobileNumber           String?
+  provider               AuthProvider @default(CREDENTIALS)
+  emailVerified          DateTime?
+  verificationCode       String?
+  verificationCodeExpiry DateTime?
+  state                  String? //Optional for initial OAuth
+  district               String? //Optional for initial OAuth
+  cropPreferences        String[]     @default([])
 
   isOnboarding Boolean @default(false) //Custom flag for onboarding check for OAuth
 

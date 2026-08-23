@@ -1,4 +1,3 @@
-import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
@@ -35,8 +34,6 @@ export async function POST(req: Request): Promise<Response> {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const code = Math.floor(100000 + Math.random() * 900000).toString();
-
         const user = await prisma.user.create({
             data: {
                 name,
@@ -47,7 +44,6 @@ export async function POST(req: Request): Promise<Response> {
                 district,
                 cropPreferences,
                 isOnboarding: true,
-                emailVerificationToken: code,
             },
         });
 
@@ -59,8 +55,6 @@ export async function POST(req: Request): Promise<Response> {
                 },
                 { status: 500 },
             );
-
-        await sendVerificationEmail(name, email, code);
 
         return Response.json(
             {
