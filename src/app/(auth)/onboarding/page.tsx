@@ -6,7 +6,7 @@ import { ApiResponse } from "@/types/ApiResponse"
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { StateRecord } from "@/types/States"
@@ -129,19 +129,19 @@ const OnboardingPage = () => {
         };
     }, []);
 
-    async function fetchStates() {
+    const fetchStates = useCallback(async () => {
         const response = await axios.get("/api/get-states");
 
         setStatesList(response.data.data?.states);
-    }
+    }, [setStatesList])
 
-    async function fetchDistricts(stateCode: number) {
+    const fetchDistricts = useCallback(async (stateCode: number) => {
         const response = await axios.get(
             `/api/get-districts?state=${stateCode}`,
         );
 
         setDistrictsList(response.data.data?.districts);
-    }
+    }, [setDistrictsList])
 
     useEffect(() => {
         //eslint-disable-next-line
