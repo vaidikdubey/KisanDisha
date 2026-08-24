@@ -119,7 +119,7 @@ const SignUpPage = () => {
             const axiosError = error as AxiosError<ApiResponse>;
 
             const errorMessage =
-                axiosError.response?.data.message || "Error signing up";
+                axiosError.response?.data.error || "Error signing up";
 
             toast.add({
                 title: "Error",

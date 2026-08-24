@@ -87,7 +87,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
 
                         {/* System Live Indicators (Recruiter / Tech Polish) */}
                         <div className="flex items-center gap-3">
-                            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground hover:bg-primary/10 cursor-default">
+                            <div className="hidden sm:flex items-center gap-2 px-2.5 py-1 rounded-full bg-muted/60 border border-border/80 text-xs font-mono text-muted-foreground hover:bg-emerald-400/25 cursor-default">
                                 <span className="relative flex h-2 w-2">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>

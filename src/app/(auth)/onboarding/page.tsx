@@ -95,7 +95,7 @@ const OnboardingPage = () => {
             const axiosError = error as AxiosError<ApiResponse>;
 
             const errorMessage =
-                axiosError.response?.data.message || "Error onboarding.";
+                axiosError.response?.data.error || "Error onboarding.";
 
             toast.add({
                 title: "Error",
