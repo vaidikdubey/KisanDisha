@@ -2,6 +2,8 @@ import { DistrictRecord, DistrictResponse } from "@/types/Districts";
 import axios from "axios";
 import { NextRequest } from "next/server";
 
+const RESOURCE_ID = "37231365-78ba-44d5-ac22-3deec40b9197"
+
 export async function GET(req: NextRequest): Promise<Response> {
     try {
         const stateCode = req.nextUrl.searchParams.get("state");
@@ -16,8 +18,15 @@ export async function GET(req: NextRequest): Promise<Response> {
             );
 
         const districtsList = await axios.get(
-            `https://api.data.gov.in/resource/37231365-78ba-44d5-ac22-3deec40b9197?api-key=${process.env.LGD_GOV_API_KEY}&format=json&filters%5Bstate_code%5D=${stateCode}`,
-            { headers: { Accept: "application/json" } },
+            `https://api.data.gov.in/resource/${RESOURCE_ID}`,
+            {
+                params: {
+                    "api-key": process.env.LGD_GOV_API_KEY,
+                    format: "json",
+                    limit: 100,
+                    "filters[state_code]": stateCode,
+                },
+            }
         );
 
         const districts: DistrictRecord[] = districtsList.data?.records.map(

@@ -1,11 +1,19 @@
 import { StateRecord, StatesResponse } from "@/types/States";
 import axios from "axios";
 
+const RESOURCE_ID = "a71e60f0-a21d-43de-a6c5-fa5d21600cdb";
+
 export async function GET(req: Request): Promise<Response> {
     try {
         const statesList = await axios.get(
-            `https://api.data.gov.in/resource/a71e60f0-a21d-43de-a6c5-fa5d21600cdb?api-key=${process.env.LGD_GOV_API_KEY}&format=json`,
-            { headers: { Accept: "application/json" } },
+            `https://api.data.gov.in/resource/${RESOURCE_ID}`,
+            {
+                params: {
+                    "api-key": process.env.LGD_GOV_API_KEY,
+                    format: "json",
+                    limit: 50,
+                },
+            },
         );
 
         const states: StateRecord[] = statesList.data?.records.map(
