@@ -20,7 +20,11 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import {
+    InputOTP,
+    InputOTPGroup,
+    InputOTPSlot,
+} from "@/components/ui/input-otp";
 import {
     FieldGroup,
     Field,
@@ -33,6 +37,9 @@ const VerifyPage = () => {
     const router = useRouter();
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    const [timer, setTimer] = useState<number>(0);
+    const [isResending, setIsResending] = useState<boolean>(false);
 
     const form = useForm<z.infer<typeof verifyEmailSchema>>({
         resolver: zodResolver(verifyEmailSchema),
@@ -74,6 +81,11 @@ const VerifyPage = () => {
     };
 
     const sendOtp = useCallback(async () => {
+        if (isResending || timer > 0) return; //Preventing concurrent requests
+
+        setIsResending(true);
+        setTimer(30);
+
         try {
             const response = await axios.get<ApiResponse>("/api/verify");
 
@@ -98,12 +110,26 @@ const VerifyPage = () => {
                 description: errorMessage,
                 type: "error",
             });
+        } finally {
+            setIsResending(false);
         }
-    }, []);
+    }, [isResending, timer]);
 
-    // useEffect(() => {
-    //     sendOtp();
-    // }, []);
+    useEffect(() => {
+        if (timer <= 0) return;
+
+        const intervalId = setInterval(
+            () => setTimer((prev) => prev - 1),
+            1000,
+        );
+
+        return clearInterval(intervalId);
+    }, [timer]);
+
+    useEffect(() => {
+        //eslint-disable-next-line
+        sendOtp();
+    }, []);
 
     return (
         <div className="h-full w-full flex justify-center items-center">
@@ -113,7 +139,8 @@ const VerifyPage = () => {
                         <CardTitle>Verify your email</CardTitle>
                     </div>
                     <CardDescription>
-                        Enter the 6-digit code sent to your email to verify your email.
+                        Enter the 6-digit code sent to your email to verify your
+                        email.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -127,15 +154,25 @@ const VerifyPage = () => {
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <Field data-invalid={fieldState.invalid}>
-                                        <FieldLabel htmlFor="signup-form-number">
+                                        <FieldLabel htmlFor="verify-email-form-number">
                                             Verification Code
                                         </FieldLabel>
-                                        <Input
+                                        <InputOTP
                                             {...field}
-                                            id="verify-email-form-code"
+                                            id="verify-email-form-number"
                                             aria-invalid={fieldState.invalid}
-                                            placeholder="123456"
-                                        />
+                                            maxLength={6}
+                                            defaultValue="123456"
+                                        >
+                                            <InputOTPGroup>
+                                                <InputOTPSlot index={0} />
+                                                <InputOTPSlot index={1} />
+                                                <InputOTPSlot index={2} />
+                                                <InputOTPSlot index={3} />
+                                                <InputOTPSlot index={4} />
+                                                <InputOTPSlot index={5} />
+                                            </InputOTPGroup>
+                                        </InputOTP>
                                         {fieldState.invalid && (
                                             <FieldError
                                                 errors={[fieldState.error]}
@@ -145,12 +182,31 @@ const VerifyPage = () => {
                                 )}
                             />
                         </FieldGroup>
+                        {isResending ? (
+                            <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5 justify-center">
+                                <Loader2 className="h-3 w-3 animate-spin" />{" "}
+                                Sending OTP...
+                            </p>
+                        ) : timer > 0 ? (
+                            <p className="text-xs text-muted-foreground mt-2">
+                                Resend code in{" "}
+                                <span className="font-semibold">{timer}s</span>
+                            </p>
+                        ) : (
+                            <p
+                                onClick={sendOtp}
+                                className="text-xs text-blue-700 mt-2 hover:text-blue-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Didn&apos;t receive the code? Try sending it
+                                again.
+                            </p>
+                        )}
                     </form>
                 </CardContent>
                 <CardFooter className="flex flex-col gap-3 mt-3">
                     <Button
                         type="submit"
-                        form="signup-form"
+                        form="verify-email-form"
                         disabled={isSubmitting}
                         className="w-1/2 flex items-center justify-center gap-2 rounded-md"
                     >
