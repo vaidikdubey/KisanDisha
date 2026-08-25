@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { AxiosError } from "axios";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
 //ShadCn components
@@ -40,6 +40,8 @@ const VerifyPage = () => {
 
     const [timer, setTimer] = useState<number>(0);
     const [isResending, setIsResending] = useState<boolean>(false);
+
+    const hasSentOtpRef = useRef<boolean>(false);
 
     const form = useForm<z.infer<typeof verifyEmailSchema>>({
         resolver: zodResolver(verifyEmailSchema),
@@ -123,13 +125,15 @@ const VerifyPage = () => {
             1000,
         );
 
-        return clearInterval(intervalId);
+        return () => clearInterval(intervalId);
     }, [timer]);
 
     useEffect(() => {
-        //eslint-disable-next-line
-        sendOtp();
-    }, []);
+        if (!hasSentOtpRef.current) {
+            hasSentOtpRef.current = true;
+            sendOtp();
+        }
+    }, [sendOtp]);
 
     return (
         <div className="h-full w-full flex justify-center items-center">
@@ -195,7 +199,7 @@ const VerifyPage = () => {
                         ) : (
                             <p
                                 onClick={sendOtp}
-                                className="text-xs text-blue-700 mt-2 hover:text-blue-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="text-xs text-blue-700 mt-2 hover:text-blue-900 font-medium disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 Didn&apos;t receive the code? Try sending it
                                 again.
