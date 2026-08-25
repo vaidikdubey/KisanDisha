@@ -18,6 +18,14 @@ enum AuthProvider {
   GOOGLE
 }
 
+enum IngestionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  PARTIAL
+  FAILED
+}
+
 model User {
   id                     String       @id @default(uuid())
   name                   String
@@ -81,4 +89,49 @@ model VerificationToken {
   expires    DateTime
 
   @@id([identifier, token])
+}
+
+model Commodity {
+  id String @id @default(uuid())
+  name String  @unique
+
+  prices MarketPrice[]
+}
+
+model Market {
+  id String @id @default(uuid())
+  name String
+  state String
+  district String
+  
+  prices MarketPrice[]
+
+  @@unique([name, state, district])
+}
+
+model MarketPrice {
+  id String @id @default(uuid())
+  commodityId String
+  marketId String
+  date DateTime
+  variety String?
+  minPrice Float
+  maxPrice Float
+  modalPrice Float
+
+  commodity Commodity @relation(fields: [commodityId], references: [id])
+  market Market @relation(fields: [marketId], references: [id])
+
+  @@unique([commodityId, marketId, date, variety])
+}
+
+//For tracking daily ingestions
+model IngestionJob {
+  id String @id @default(uuid())
+  status IngestionStatus
+  startedAt DateTime @default(now())
+  completedAt DateTime?
+  recordsProcessed Int @default(0)
+  recordsFailed Int @default(0)
+  errorMessage String?
 }
