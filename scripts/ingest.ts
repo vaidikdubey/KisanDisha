@@ -1,4 +1,4 @@
-import "dotenv/config" //For DB connection
+import "dotenv/config"; //For DB connection
 import { IngestionStatus } from "@/lib/enum";
 import { prisma } from "../src/lib/prisma";
 import axios from "axios";
@@ -12,8 +12,33 @@ function parseDate(date: string): Date {
 
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 
-async function ingest(state: string) {
-    console.log("Ingestion started...")
+async function fetchDataWithRetry(state: string, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await axios.get(
+                `https://api.data.gov.in/resource/${RESOURCE_ID}`,
+                {
+                    params: {
+                        "api-key": process.env.LGD_GOV_API_KEY,
+                        format: "json",
+                        limit: 500,
+                        "filters [state]": state,
+                    },
+                    timeout: 15000,
+                },
+            );
+        } catch (error) {
+            if (i === retries - 1) throw error;
+
+            console.log("Exponential backoff: ", 2000 * (i + 1), "sec");
+
+            await new Promise((r) => setTimeout(r, 2000 * (i + 1))); //Exponential backoff
+        }
+    }
+}
+
+async function ingest() {
+    console.log("Ingestion started...");
 
     const job = await prisma.ingestionJob.create({
         data: {
@@ -24,19 +49,9 @@ async function ingest(state: string) {
     let processed = 0,
         failed = 0;
 
-    const res = await axios.get(
-        `https://api.data.gov.in/resource/${RESOURCE_ID}`,
-        {
-            params: {
-                "api-key": process.env.LGD_GOV_API_KEY,
-                format: "json",
-                limit: 500,
-                "filters[state]": state,
-            },
-        },
-    );
+    const res = await fetchDataWithRetry("Madhya Pradesh");
 
-    const raw = res.data;
+    const raw = res?.data;
 
     for (const row of raw.records) {
         const parsed = ingestionSchema.safeParse(row);
@@ -79,8 +94,8 @@ async function ingest(state: string) {
                     commodityId: commodity.id,
                     marketId: market.id,
                     date: parseDate(r.arrival_date),
-                    variety: r.variety
-                }
+                    variety: r.variety,
+                },
             },
             update: {
                 minPrice: r.min_price,
@@ -95,25 +110,28 @@ async function ingest(state: string) {
                 minPrice: r.min_price,
                 maxPrice: r.max_price,
                 modalPrice: r.modal_price,
-            }
-        })
+            },
+        });
 
-        processed++
+        processed++;
     }
 
     await prisma.ingestionJob.update({
         where: {
-            id: job.id
+            id: job.id,
         },
         data: {
-            status: failed > 0 ? IngestionStatus.partial : IngestionStatus.completed,
+            status:
+                failed > 0
+                    ? IngestionStatus.partial
+                    : IngestionStatus.completed,
             completedAt: new Date(),
             recordsProcessed: processed,
             recordsFailed: failed,
-        }
-    })
+        },
+    });
 
-    console.log("Ingestion finished...")
+    console.log("Ingestion finished...");
 }
 
-ingest("Madhya Pradesh").finally(() => prisma.$disconnect())
+ingest().finally(() => prisma.$disconnect());
