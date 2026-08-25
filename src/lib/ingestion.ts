@@ -1,6 +1,5 @@
-import "dotenv/config"; //For DB connection
-import { IngestionStatus } from "@/lib/enum";
-import { prisma } from "../src/lib/prisma";
+import { IngestionStatus } from "@/helpers/enum";
+import { prisma } from "@/lib/prisma";
 import axios from "axios";
 import { ingestionSchema } from "@/schemas/ingestionSchema";
 
@@ -12,7 +11,7 @@ function parseDate(date: string): Date {
 
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 
-async function fetchDataWithRetry(state: string, retries = 3) {
+async function fetchDataWithRetry(state: string, jobId: string, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
             return await axios.get(
@@ -28,7 +27,18 @@ async function fetchDataWithRetry(state: string, retries = 3) {
                 },
             );
         } catch (error) {
-            if (i === retries - 1) throw error;
+            if (i === retries - 1) {
+                await prisma.ingestionJob.update({
+                    where: {
+                        id: jobId,
+                    },
+                    data: {
+                        status: IngestionStatus.failed,
+                    },
+                });
+
+                throw error;
+            }
 
             console.log("Exponential backoff: ", 2000 * (i + 1), "sec");
 
@@ -49,7 +59,7 @@ async function ingest() {
     let processed = 0,
         failed = 0;
 
-    const res = await fetchDataWithRetry("Madhya Pradesh");
+    const res = await fetchDataWithRetry("Madhya Pradesh", job.id);
 
     const raw = res?.data;
 
