@@ -274,7 +274,7 @@ git commit -m "Add amazing feature"
 git push origin feature/amazing-feature
 ```
 
-5. Open a Pull Request
+5. Open a pull request
 
 ## 👨‍💻 Author
 
