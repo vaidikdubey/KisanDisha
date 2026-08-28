@@ -33,7 +33,7 @@ account required to browse prices, full features behind a lightweight login.
 ### 📊 Price Comparison
 
 - Filter by crop, sort by price or trend
-- Nearest-markets-with-best-price, ranked by region
+- Nearest markets with best price, ranked by region
 
 ### 🤖 AI Selling Advisor
 
