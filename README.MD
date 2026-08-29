@@ -265,7 +265,7 @@ git checkout -b feature/amazing-feature
 3. Commit your changes
 
 ```bash
-git commit -m "Add amazing feature"
+git commit -m "Added amazing feature"
 ```
 
 4. Push to your branch
