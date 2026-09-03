@@ -1,7 +1,7 @@
-import { IngestionStatus } from "@/helpers/enum";
-import { prisma } from "@/lib/prisma";
+import { IngestionStatus } from "../helpers/enum";
+import { prisma } from "./prisma";
 import axios from "axios";
-import { ingestionSchema } from "@/schemas/ingestionSchema";
+import { ingestionSchema } from "../schemas/ingestionSchema";
 
 const RESOURCE_ID = "9ef84268-d588-465a-a308-a864a43d0070";
 const LIMIT = 500;
