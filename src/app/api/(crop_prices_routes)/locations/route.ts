@@ -7,7 +7,7 @@ export async function GET(): Promise<Response> {
             state: true,
             district: true,
         },
-        orderBy: { state: "asc" },
+        orderBy: [{ state: "asc" }, { district: "asc" }],
     });
 
     return Response.json(
