@@ -37,25 +37,25 @@ export async function GET(request: NextRequest): Promise<Response> {
                 { status: 404 },
             );
 
+        const whereClause = {
+            commodityId: commodityRecord.id,
+            market: {
+                ...(state && { state }),
+                ...(district && { district }),
+            },
+            ...(startDate || endDate
+                ? {
+                      date: {
+                          ...(startDate && { gte: new Date(startDate) }),
+                          ...(endDate && { lte: new Date(endDate) }),
+                      },
+                  }
+                : {}),
+        };
+
         const [prices, total] = await Promise.all([
             await prisma.marketPrice.findMany({
-                where: {
-                    commodityId: commodityRecord.id,
-                    market: {
-                        ...(state && { state }),
-                        ...(district && { district }),
-                    },
-                    ...(startDate || endDate
-                        ? {
-                              date: {
-                                  ...(startDate && {
-                                      gte: new Date(startDate),
-                                  }),
-                                  ...(endDate && { lte: new Date(endDate) }),
-                              },
-                          }
-                        : {}),
-                },
+                where: whereClause,
                 include: {
                     market: true,
                 },
@@ -63,25 +63,7 @@ export async function GET(request: NextRequest): Promise<Response> {
                 skip: (page - 1) * limit,
                 take: limit,
             }),
-            await prisma.marketPrice.count({
-                where: {
-                    commodityId: commodityRecord.id,
-                    market: {
-                        ...(state && { state }),
-                        ...(district && { district }),
-                    },
-                    ...(startDate || endDate
-                        ? {
-                              date: {
-                                  ...(startDate && {
-                                      gte: new Date(startDate),
-                                  }),
-                                  ...(endDate && { lte: new Date(endDate) }),
-                              },
-                          }
-                        : {}),
-                },
-            }),
+            await prisma.marketPrice.count({ where: whereClause }),
         ]);
 
         if (prices.length === 0)
@@ -98,8 +80,6 @@ export async function GET(request: NextRequest): Promise<Response> {
                 },
                 { status: 200 },
             );
-
-        console.log("Prices fetched: ", prices);
 
         return Response.json(
             {
