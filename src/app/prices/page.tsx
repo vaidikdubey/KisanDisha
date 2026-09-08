@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod"
+import { PriceFilterBar } from "./_components/PriceFilterBar";
 
 const PricesFormPage = () => {
     const router = useRouter()
@@ -36,18 +37,20 @@ const PricesFormPage = () => {
         }
     }
 
-    const onSubmit = async (data: z.infer<typeof pricesFormSchema>) => { 
-        setIsSubmitting(true)
+    // const onSubmit = async (data: z.infer<typeof pricesFormSchema>) => { 
+    //     setIsSubmitting(true)
 
-        try {
-            const response = await axios.post()
-        } catch (error) {
+    //     try {
+    //         const response = await axios.post()
+    //     } catch (error) {
             
-        }
-    }
+    //     }
+    // }
 
   return (
-    <div>PricesFormPage</div>
+      <div>
+        <PriceFilterBar />
+    </div>
   )
 }
 export default PricesFormPage
