@@ -5,6 +5,7 @@ import {
 } from "@/lib/queries/prices";
 import { PriceFilterBar } from "./_components/PriceFilterBar";
 import { PricesTable } from "./_components/PricesTable";
+import { PriceTrendsChart } from "./_components/PriceTrendsChart";
 
 export default async function PricesPage({
     searchParams,
@@ -77,8 +78,7 @@ export default async function PricesPage({
 
     const { prices, total, limit, page } = data;
 
-    // --- Summary Metric Calculations ---
-    // Calculates overall average from trend data
+    // --- Dynamic Calculations ---
     const overallAvg =
         trends && trends.length > 0
             ? Math.round(
@@ -87,13 +87,11 @@ export default async function PricesPage({
               )
             : 0;
 
-    // Calculates peak price across current table rows
     const peakPrice =
         prices && prices.length > 0
             ? Math.max(...prices.map((p) => p.maxPrice ?? p.modalPrice ?? 0))
             : 0;
 
-    // Calculates percentage change over the returned trend period
     const firstTrendPrice = trends?.[0]?.avgModalPrice ?? 0;
     const lastTrendPrice = trends?.[trends.length - 1]?.avgModalPrice ?? 0;
     const trendDiff = lastTrendPrice - firstTrendPrice;
@@ -251,6 +249,42 @@ export default async function PricesPage({
                     total={total}
                     limit={limit}
                     page={page}
+                />
+            </div>
+
+            {/* Price Trends Chart Section */}
+            <div className="p-5 sm:p-6 rounded-xl border border-border/60 bg-background/60 backdrop-blur-md shadow-sm space-y-4 relative">
+                <span className="absolute -top-2 -left-2 text-xs font-mono text-muted-foreground/60 select-none">
+                    +
+                </span>
+                <span className="absolute -top-2 -right-2 text-xs font-mono text-muted-foreground/60 select-none">
+                    +
+                </span>
+                <span className="absolute -bottom-2 -left-2 text-xs font-mono text-muted-foreground/60 select-none">
+                    +
+                </span>
+                <span className="absolute -bottom-2 -right-2 text-xs font-mono text-muted-foreground/60 select-none">
+                    +
+                </span>
+
+                <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                    <div>
+                        <h2 className="text-lg font-semibold font-heading">
+                            Price Trajectory & Historical Trends
+                        </h2>
+                        <p className="text-xs text-muted-foreground font-mono">
+                            Average daily modal price movement for{" "}
+                            {params.commodity} across matching mandis.
+                        </p>
+                    </div>
+                    <span className="text-[10px] font-mono text-muted-foreground border border-border/60 px-2 py-0.5 rounded bg-muted/20">
+                        Daily Aggregates
+                    </span>
+                </div>
+
+                <PriceTrendsChart
+                    trends={trends ?? []}
+                    commodity={params.commodity ?? ""}
                 />
             </div>
         </div>
