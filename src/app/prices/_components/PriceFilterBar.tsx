@@ -3,7 +3,7 @@
 import { toast } from "@/components/ui/toast";
 import { ApiResponse } from "@/types/ApiResponse";
 import axios, { AxiosError } from "axios";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format, startOfDay, subDays } from "date-fns";
 import { CalendarIcon } from "lucide-react";
@@ -40,6 +40,7 @@ interface LocationItem {
 
 export const PriceFilterBar = () => {
     const router = useRouter();
+    const pathname = usePathname();
     const currentParams = useSearchParams();
 
     const today = startOfDay(new Date());
@@ -147,7 +148,7 @@ export const PriceFilterBar = () => {
         //Resetting to page 1 on any filter change
         params.set("page", "1");
 
-        router.replace(`/prices?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`);
     }
 
     return (
@@ -293,8 +294,8 @@ export const PriceFilterBar = () => {
 
             <Button
                 onClick={searchPrices}
-                variant="link"
-                className="w-fit mx-auto"
+                variant="default"
+                className="w-fit mx-auto rounded-md mb-5"
             >
                 Get Prices
             </Button>
