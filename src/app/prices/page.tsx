@@ -1,56 +1,49 @@
-'use client'
-
-import { pricesFormSchema } from "@/schemas/pricesFormSchema";
-import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { useForm } from "react-hook-form";
-import * as z from "zod"
+import { CommodityNotFoundError, getPrices } from "@/lib/queries/prices";
 import { PriceFilterBar } from "./_components/PriceFilterBar";
 
-const PricesFormPage = () => {
-    const router = useRouter()
+export default async function PricesPage({ searchParams }: { searchParams: Promise<{ [key: string]: string | undefined }> }) {
+    const params = await searchParams
 
-    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const [statesList, setStatesList] = useState<[]>([]);
-    const [districtsList, setDistrictsList] = useState<[]>([]);
+    if (!params.commodity) return (
+        <div className="h-full w-full flex flex-col justify-center items-center">
+            <PriceFilterBar />
+            <p className="h-full flex-1">Select a commodity to see prices.</p>
+        </div>
+    )
 
-    const form = useForm<z.infer<typeof pricesFormSchema>>({
-        resolver: zodResolver(pricesFormSchema),
-        defaultValues: {
-            commodity: "",
-            district: "",
-            state: "",
+    let data: Awaited<ReturnType<typeof getPrices>> | null = null;
+    let commodityMissing = false;
+
+    try {
+        data = await getPrices({
+            commodity: params.commodity,
+            state: params.state,
+            district: params.district,
+            startDate: params.startDate,
+            endDate: params.endDate,
+            page: Number(params.page) || 1,
+            limit: Number(params.limit) || 20
+        })
+    } catch (error) {
+        if (error instanceof CommodityNotFoundError) { 
+            commodityMissing = true
         }
-    })
-
-    function getPresentRange(days: number) { 
-        const endDate = new Date()
-        const startDate = new Date()
-
-        startDate.setDate(startDate.getDate() - days)
-
-        return {
-            startDate: startDate.toISOString().split("T")[0],
-            endDate: endDate.toISOString().split("T")[0]
-        }
+        throw error
     }
 
-    // const onSubmit = async (data: z.infer<typeof pricesFormSchema>) => { 
-    //     setIsSubmitting(true)
+    if (commodityMissing) return (
+        <div>
+            <PriceFilterBar />
+            <p>Commodity not found.</p>
+        </div>
+    )
 
-    //     try {
-    //         const response = await axios.post()
-    //     } catch (error) {
+    const { prices, total, limit, page } = data
+
+    return (
+        <div>
+            <PriceFilterBar />
             
-    //     }
-    // }
-
-  return (
-      <div>
-        <PriceFilterBar />
-    </div>
-  )
+        </div>
+    )
 }
-export default PricesFormPage

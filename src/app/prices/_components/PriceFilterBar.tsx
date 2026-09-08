@@ -152,7 +152,7 @@ export const PriceFilterBar = () => {
 
     return (
         <div className="w-full flex flex-col">
-            <div className="w-full grid grid-cols-2 md:grid-cols-4 gap-2 justify-between items-center p-5 px-8">
+            <div className="w-full grid grid-cols-1 md:grid-cols-4 gap-2 justify-between items-center p-5 px-8">
                 {/* Commodities */}
                 <Select
                     defaultValue="Select Commodity"
@@ -163,7 +163,7 @@ export const PriceFilterBar = () => {
                         value: c.name,
                     }))}
                 >
-                    <SelectTrigger className="w-full max-w-48">
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select Commodity" />
                     </SelectTrigger>
                     <SelectContent className="w-fit">
@@ -188,7 +188,7 @@ export const PriceFilterBar = () => {
                         value: s,
                     }))}
                 >
-                    <SelectTrigger className="w-full max-w-48">
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select State" />
                     </SelectTrigger>
                     <SelectContent className="w-fit">
@@ -213,7 +213,7 @@ export const PriceFilterBar = () => {
                         value: s,
                     }))}
                 >
-                    <SelectTrigger className="w-full max-w-48">
+                    <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select District" />
                     </SelectTrigger>
                     <SelectContent className="w-fit">
@@ -242,17 +242,35 @@ export const PriceFilterBar = () => {
                                 <Button
                                     variant="outline"
                                     id="date-picker-range"
-                                    className="justify-start px-2.5 font-normal"
+                                    className="w-full justify-start px-2.5 font-normal min-w-0 h-auto py-2 whitespace-normal"
                                 >
-                                    <CalendarIcon data-icon="inline-start" />
+                                    <CalendarIcon
+                                        data-icon="inline-start"
+                                        className="shrink-0 mr-0 self-center"
+                                    />
                                     {date?.from ? (
                                         date.to ? (
-                                            <>
-                                                {format(date.from, "LLL dd, y")}{" "}
-                                                - {format(date.to, "LLL dd, y")}
-                                            </>
+                                            <span className="flex flex-wrap items-center gap-x-1 text-xs md:text-sm leading-tight">
+                                                <span>
+                                                    {format(
+                                                        date.from,
+                                                        "LLL dd, y",
+                                                    )}
+                                                </span>
+                                                <span className="text-muted-foreground">
+                                                    -
+                                                </span>
+                                                <span>
+                                                    {format(
+                                                        date.to,
+                                                        "LLL dd, y",
+                                                    )}
+                                                </span>
+                                            </span>
                                         ) : (
-                                            format(date.from, "LLL dd, y")
+                                            <span className="text-xs md:text-sm">
+                                                {format(date.from, "LLL dd, y")}
+                                            </span>
                                         )
                                     ) : (
                                         <span>Pick a date</span>
