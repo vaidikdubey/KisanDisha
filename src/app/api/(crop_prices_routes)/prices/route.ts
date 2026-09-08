@@ -1,17 +1,11 @@
-import { prisma } from "@/lib/prisma";
 import { NextRequest } from "next/server";
+import { getPrices, CommodityNotFoundError } from "@/lib/queries/prices";
 
 export async function GET(request: NextRequest): Promise<Response> {
     try {
         const searchParams = request.nextUrl.searchParams;
 
         const commodity = searchParams.get("commodity");
-        const state = searchParams.get("state");
-        const district = searchParams.get("district");
-        const startDate = searchParams.get("startDate");
-        const endDate = searchParams.get("endDate");
-        const page = Number(searchParams.get("page")) || 1;
-        const limit = Number(searchParams.get("limit")) || 20;
 
         if (!commodity)
             return Response.json(
@@ -22,69 +16,23 @@ export async function GET(request: NextRequest): Promise<Response> {
                 { status: 400 },
             );
 
-        const commodityRecord = await prisma.commodity.findUnique({
-            where: {
-                name: commodity,
-            },
+        const { prices, total, page, limit } = await getPrices({
+            commodity,
+            state: searchParams.get("state") ?? undefined,
+            district: searchParams.get("district") ?? undefined,
+            startDate: searchParams.get("startDate") ?? undefined,
+            endDate: searchParams.get("endDate") ?? undefined,
+            page: Number(searchParams.get("page")) || 1,
+            limit: Number(searchParams.get("limit")) || 20,
         });
-
-        if (!commodityRecord)
-            return Response.json(
-                {
-                    success: false,
-                    error: "Commodity not found",
-                },
-                { status: 404 },
-            );
-
-        const whereClause = {
-            commodityId: commodityRecord.id,
-            market: {
-                ...(state && { state }),
-                ...(district && { district }),
-            },
-            ...(startDate || endDate
-                ? {
-                      date: {
-                          ...(startDate && { gte: new Date(startDate) }),
-                          ...(endDate && { lte: new Date(endDate) }),
-                      },
-                  }
-                : {}),
-        };
-
-        const [prices, total] = await Promise.all([
-            await prisma.marketPrice.findMany({
-                where: whereClause,
-                include: {
-                    market: true,
-                },
-                orderBy: { date: "desc" },
-                skip: (page - 1) * limit,
-                take: limit,
-            }),
-            await prisma.marketPrice.count({ where: whereClause }),
-        ]);
-
-        if (prices.length === 0)
-            return Response.json(
-                {
-                    success: true,
-                    message: `No price details found for the ${commodity} at the moment`,
-                    data: prices,
-                    pagination: {
-                        totalRecords: total,
-                        page,
-                        limit,
-                    },
-                },
-                { status: 200 },
-            );
 
         return Response.json(
             {
                 success: true,
-                message: `Prices for ${commodity} fetched`,
+                message:
+                    prices.length === 0
+                        ? `No price details found for ${commodity}`
+                        : `Prices for ${commodity} fetched`,
                 data: prices,
                 pagination: {
                     totalRecords: total,
@@ -96,12 +44,14 @@ export async function GET(request: NextRequest): Promise<Response> {
         );
     } catch (error) {
         console.error("Error fetching prices ", error);
-        return Response.json(
-            {
-                success: false,
-                error: "Error fetching prices",
-            },
-            { status: 500 },
-        );
+        if (error instanceof CommodityNotFoundError)
+            return Response.json(
+                {
+                    success: false,
+                    error: error.message,
+                },
+                { status: 500 },
+            );
+        throw error;
     }
 }
