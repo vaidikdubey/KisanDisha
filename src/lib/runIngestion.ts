@@ -11,7 +11,7 @@ function parseDate(date: string): Date {
   return new Date(year, month - 1, day);
 }
 
-async function fetchWithRetry(state: string, offset: number, retries = 3) {
+async function fetchWithRetry(state: string, date: string, offset: number, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
       return await axios.get(`https://api.data.gov.in/resource/${RESOURCE_ID}`, {
@@ -20,23 +20,29 @@ async function fetchWithRetry(state: string, offset: number, retries = 3) {
           format: "json",
           limit: LIMIT,
           offset,
-          "filters[state]": state, // no space — this was the bug
+          "filters[state]": state,
+          "filters[arrival_date]": date,
         },
         timeout: 15000,
       });
     } catch (error) {
       if (i === retries - 1) throw error;
-      console.log(`Retrying ${state} (offset ${offset}) in ${2000 * (i + 1)}ms`);
+      console.log(`Retrying ${state}/${date} (offset ${offset}) in ${2000 * (i + 1)}ms`);
       await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
     }
   }
 }
 
-async function ingestState(state: string): Promise<{ processed: number; failed: number }> {
-  let processed = 0, failed = 0, offset = 0;
+async function ingestState(state: string, dates: string[]): Promise<{ processed: number; failed: number }> {
+  let processed = 0, failed = 0
+  const commodityCache = new Map<string, string>()
+  const marketCache = new Map<string, string>()
 
-  while (true) {
-    const res = await fetchWithRetry(state, offset);
+  for (const date of dates) { 
+    let offset = 0
+
+    while (true) {
+    const res = await fetchWithRetry(state, date, offset);
     const records = res?.data?.records ?? [];
     if (records.length === 0) break;
 
@@ -49,24 +55,41 @@ async function ingestState(state: string): Promise<{ processed: number; failed: 
       }
       const r = parsed.data;
 
-      const commodity = await prisma.commodity.upsert({
+      let commodityId = commodityCache.get(r.commodity)
+
+      if (!commodityId) { 
+        const c = await prisma.commodity.upsert({
         where: { name: r.commodity }, update: {}, create: { name: r.commodity },
-      });
-      const market = await prisma.market.upsert({
+        });
+
+        commodityId = c.id
+        commodityCache.set(r.commodity, commodityId)
+      }
+
+      const marketKey = `${r.market}${r.state}${r.district}`
+      let marketId = marketCache.get(marketKey)
+
+      if (!marketId) { 
+        const m = await prisma.market.upsert({
         where: { name_state_district: { name: r.market, state: r.state, district: r.district } },
         update: {},
         create: { name: r.market, state: r.state, district: r.district },
-      });
+        });
+
+        marketId = m.id
+        marketCache.set(marketKey, marketId)
+      }
+      
       await prisma.marketPrice.upsert({
         where: {
           commodityId_marketId_date_variety: {
-            commodityId: commodity.id, marketId: market.id,
+            commodityId, marketId,
             date: parseDate(r.arrival_date), variety: r.variety,
           },
         },
         update: { minPrice: r.min_price, maxPrice: r.max_price, modalPrice: r.modal_price },
         create: {
-          commodityId: commodity.id, marketId: market.id, date: parseDate(r.arrival_date),
+          commodityId, marketId, date: parseDate(r.arrival_date),
           variety: r.variety, minPrice: r.min_price, maxPrice: r.max_price, modalPrice: r.modal_price,
         },
       });
@@ -76,10 +99,29 @@ async function ingestState(state: string): Promise<{ processed: number; failed: 
     if (records.length < LIMIT) break;
     offset += LIMIT;
   }
+  }
+  
   return { processed, failed };
 }
 
+function formatDate(d: Date): string { 
+  const day = String(d.getDate()).padStart(2, "0")
+  const month = String(d.getMonth() + 1).padStart(2, "0")
+
+  return `${day}/${month}/${d.getFullYear()}`
+}
+
+function getTargetDates(): string[] { 
+  const today = new Date()
+  const yesterday = new Date()
+
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  return [formatDate(yesterday), formatDate(today)]
+}
+
 export async function runIngestion(states: string[]) {
+  const dates = getTargetDates();
   console.log("Ingestion started...");
   const job = await prisma.ingestionJob.create({ data: { status: IngestionStatus.processing } });
 
@@ -88,7 +130,7 @@ export async function runIngestion(states: string[]) {
 
   for (const state of states) {
     try {
-      const { processed, failed } = await ingestState(state);
+      const { processed, failed } = await ingestState(state, dates);
       totalProcessed += processed;
       totalFailed += failed;
     } catch (error) {
