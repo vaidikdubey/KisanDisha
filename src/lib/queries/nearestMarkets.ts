@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../prisma";
 import { CommodityNotFoundError } from "./prices";
 
@@ -47,22 +48,27 @@ export async function getNearestMarkets({
 
     if (!targetDate) return { sortedMarkets: [], total: 0, page, limit };
 
+    const marketWhere: Prisma.MarketWhereInput = {
+        ...(state && { state: { equals: state, mode: "insensitive" } }),
+        ...(district && {
+            district: { equals: district, mode: "insensitive" },
+        }),
+    };
+
+    const whereClause: Prisma.MarketPriceWhereInput = {
+        commodityId: commodityRecord.id,
+        date: targetDate,
+        ...(Object.keys(marketWhere).length > 0 && { market: marketWhere }),
+    };
+
     const [markets, total] = await Promise.all([
         await prisma.marketPrice.findMany({
-            where: {
-                commodityId: commodityRecord.id,
-                date: targetDate,
-                market: { state: { equals: state, mode: "insensitive" } },
-            },
+            where: whereClause,
             include: { market: true },
             orderBy: { modalPrice: "desc" },
         }),
         await prisma.marketPrice.count({
-            where: {
-                commodityId: commodityRecord.id,
-                date: targetDate,
-                market: { state: { equals: state, mode: "insensitive" } },
-            },
+            where: whereClause,
         }),
     ]);
 
