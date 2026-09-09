@@ -183,7 +183,10 @@ export const PriceFilterBar = () => {
                 <Select
                     defaultValue="Select State"
                     value={selectedState}
-                    onValueChange={(value) => setSelectedState(value!)}
+                    onValueChange={(value) => {
+                        setSelectedState(value!)
+                        setSelectedDistrict(""); // Clear district when state changes
+                    }}
                     items={stateList.map((s) => ({
                         label: s?.toLocaleUpperCase(),
                         value: s,
@@ -213,6 +216,7 @@ export const PriceFilterBar = () => {
                         label: s?.toLocaleUpperCase(),
                         value: s,
                     }))}
+                    disabled={!selectedState}
                 >
                     <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select District" />

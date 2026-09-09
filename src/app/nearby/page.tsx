@@ -68,7 +68,7 @@ export default async function NearestMarketsPage({
         <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm font-medium flex items-center gap-2">
           <AlertCircle className="w-4 h-4 shrink-0" />
           <span>
-            Commodity &apos;{params.commodity}&apos; not found. Please try searching for another crop.
+            Commodity &ldquo;{params.commodity}&rdquo; not found. Please try searching for another crop.
           </span>
         </div>
       </div>
@@ -117,7 +117,7 @@ export default async function NearestMarketsPage({
         <div className="flex justify-end pt-1">
           <p className="text-[11px] font-mono text-muted-foreground">
             <span className="text-destructive font-bold mr-1">*</span>
-            Defaults to your saved user profile state and district if unselected.
+            Defaults to your saved state/district if unselected.
           </p>
         </div>
       </div>
