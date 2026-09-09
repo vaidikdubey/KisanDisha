@@ -62,12 +62,15 @@ export const PricesTable = ({
 
     const totalPages = Math.ceil(total / limit) || 1;
 
-    const updateQueryParams = (updates: Record<string, string | number>) => {
+    const updateQueryParams = (
+        updates: Record<string, string | number | null>,
+    ) => {
         const params = new URLSearchParams(searchParams.toString());
         Object.entries(updates).forEach(([key, value]) => {
-            params.set(key, String(value));
+            if (value === null || value === undefined || value === "") params.delete(key);
+            else params.set(key, String(value));
         });
-        router.push(`${pathname}?${params.toString()}`);
+        router.replace(`${pathname}?${params.toString()}`, {scroll: false});
     };
 
     const handlePageChange = (newPage: number) => {
@@ -99,7 +102,27 @@ export const PricesTable = ({
                     <TableBody>
                         {prices && prices.length > 0 ? (
                             prices.map((price, idx) => (
-                                <TableRow key={price.id}>
+                                <TableRow
+                                    key={price.id}
+                                    data-state={
+                                        searchParams.get("marketId") ===
+                                        price.marketId
+                                            ? "selected"
+                                            : undefined
+                                    }
+                                    onClick={() => {
+                                        const nextMarketId =
+                                            searchParams.get("marketId") ===
+                                            price.marketId
+                                                ? null
+                                                : price.marketId;
+
+                                        updateQueryParams({
+                                            marketId: nextMarketId,
+                                        });
+                                    }}
+                                    className="cursor-pointer"
+                                >
                                     <TableCell className="font-mono text-muted-foreground">
                                         {(page - 1) * limit + idx + 1}.
                                     </TableCell>

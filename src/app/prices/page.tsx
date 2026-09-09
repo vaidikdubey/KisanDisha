@@ -56,12 +56,11 @@ export default async function PricesPage({
             district: params.district,
             startDate: params.startDate,
             endDate: params.endDate,
+            marketId: params.marketId,
         });
     } catch (error) {
-        if (error instanceof CommodityNotFoundError) {
-            commodityMissing = true;
-        }
-        throw error;
+        if (error instanceof CommodityNotFoundError) commodityMissing = true;
+        else throw error;
     }
 
     if (commodityMissing)
@@ -75,6 +74,24 @@ export default async function PricesPage({
                 </div>
             </div>
         );
+
+    // Guard against null data to prevent runtime crashes
+    if (!data) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center px-4">
+                <div className="w-full max-w-4xl p-6 rounded-xl border border-border/60 bg-background/60 backdrop-blur-md shadow-sm">
+                    <PriceFilterBar />
+                </div>
+                <div className="p-4 rounded-lg bg-muted/40 border border-border text-muted-foreground text-sm font-medium flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary/75 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    </span>
+                    Fetching market data...
+                </div>
+            </div>
+        );
+    }
 
     const { prices, total, limit, page } = data;
 

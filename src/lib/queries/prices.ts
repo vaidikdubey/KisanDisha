@@ -16,6 +16,7 @@ export interface TrendsQueryParams {
     district?: string;
     startDate?: string;
     endDate?: string;
+    marketId?: string,
 }
 
 export class CommodityNotFoundError extends Error {}
@@ -76,6 +77,7 @@ export async function getPriceTrends({
     district,
     startDate,
     endDate,
+    marketId,
 }: TrendsQueryParams) {
     const commodityRecord = await prisma.commodity.findUnique({
         where: {
@@ -90,6 +92,7 @@ export async function getPriceTrends({
         by: ["date"],
         where: {
             commodityId: commodityRecord.id,
+            ...(marketId && { marketId }),
             market: {
                 ...(state && { state }),
                 ...(district && { district }),
