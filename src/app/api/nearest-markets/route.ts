@@ -51,8 +51,11 @@ export async function GET(request: NextRequest): Promise<Response> {
             { status: 400 },
         );
 
+    const rawPage = parseInt(searchParams.get("page") || "1", 10);
+    const rawLimit = parseInt(searchParams.get("limit") || "20", 10);
+
     try {
-        const markets = await getNearestMarkets({
+        const { sortedMarkets, total, page, limit } = await getNearestMarkets({
             commodity,
             state:
                 searchParams.get("state") ??
@@ -61,16 +64,23 @@ export async function GET(request: NextRequest): Promise<Response> {
                 searchParams.get("district") ??
                 (dbUser?.district ? dbUser.district : undefined),
             date: searchParams.get("date") ?? undefined,
+            page: isNaN(rawPage) || rawPage < 1 ? 1 : rawPage,
+            limit: isNaN(rawLimit) || rawLimit < 1 ? 20 : rawLimit,
         });
 
         return Response.json(
             {
                 success: true,
                 message:
-                    markets.length === 0
+                    sortedMarkets.length === 0
                         ? `No prices found for ${commodity}`
                         : `Nearest markets for ${commodity} fetched`,
-                data: markets,
+                data: sortedMarkets,
+                pagination: {
+                    totalRecords: total,
+                    page,
+                    limit,
+                },
             },
             { status: 200 },
         );
