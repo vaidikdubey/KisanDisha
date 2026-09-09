@@ -219,7 +219,7 @@ export const PriceFilterBar = () => {
                     disabled={!selectedState}
                 >
                     <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select District" />
+                        <SelectValue placeholder={selectedState ? "Select District" : "Select State First"} />
                     </SelectTrigger>
                     <SelectContent className="w-fit">
                         <SelectGroup>
