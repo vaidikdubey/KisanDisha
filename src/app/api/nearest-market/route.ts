@@ -1,11 +1,27 @@
 import { getNearestMarkets } from "@/lib/queries/nearestMarkets";
 import { CommodityNotFoundError } from "@/lib/queries/prices";
+import { getServerSession, User } from "next-auth";
 import { NextRequest } from "next/server";
+import { authOptions } from "../auth/[...nextauth]/options";
+import { prisma } from "@/lib/prisma";
 
 export async function GET(request: NextRequest): Promise<Response> {
+    const session = await getServerSession(authOptions);
+    const user: User = session?.user as User;
+
+    if (!session || !user)
+        return Response.json(
+            {
+                success: false,
+                error: "Not Authenticated",
+            },
+            { status: 401 },
+        );
+
+    const userId = user.id;
+
     const searchParams = request.nextUrl.searchParams;
     const commodity = searchParams.get("commodity");
-    const state = searchParams.get("state");
 
     if (!commodity)
         return Response.json(
@@ -16,7 +32,17 @@ export async function GET(request: NextRequest): Promise<Response> {
             { status: 400 },
         );
 
-    if (!state)
+    const dbUser = await prisma.user.findUnique({
+        where: {
+            id: userId,
+        },
+        select: {
+            state: true,
+            district: true,
+        },
+    });
+
+    if (!searchParams.get("state") && !dbUser?.state)
         return Response.json(
             {
                 success: false,
@@ -28,8 +54,12 @@ export async function GET(request: NextRequest): Promise<Response> {
     try {
         const markets = await getNearestMarkets({
             commodity,
-            state,
-            district: searchParams.get("district") ?? undefined,
+            state:
+                searchParams.get("state") ??
+                (dbUser?.state ? dbUser.state : undefined),
+            district:
+                searchParams.get("district") ??
+                (dbUser?.district ? dbUser.district : undefined),
             date: searchParams.get("date") ?? undefined,
         });
 
@@ -38,7 +68,7 @@ export async function GET(request: NextRequest): Promise<Response> {
                 success: true,
                 message:
                     markets.length === 0
-                        ? `No prices found for ${commodity} in ${state}`
+                        ? `No prices found for ${commodity}`
                         : `Nearest markets for ${commodity} fetched`,
                 data: markets,
             },

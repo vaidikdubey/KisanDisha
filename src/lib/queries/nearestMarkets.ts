@@ -1,6 +1,12 @@
 import { prisma } from "../prisma";
 import { CommodityNotFoundError } from "./prices";
 
+function parseDate(dateStr: string): Date { 
+    const [day, month, year] = dateStr.split("/").map(Number);
+
+    return new Date(year, month - 1, day)
+}
+
 export async function getNearestMarkets({
     commodity,
     state,
@@ -8,7 +14,7 @@ export async function getNearestMarkets({
     date,
 }: {
     commodity: string;
-    state: string;
+    state?: string;
     district?: string;
     date?: string;
 }) {
@@ -28,12 +34,14 @@ export async function getNearestMarkets({
               await prisma.marketPrice.findFirst({
                   where: {
                       commodityId: commodityRecord.id,
-                      market: { state },
+                      market: { state: { equals: state, mode: "insensitive" } },
                   },
                   orderBy: { date: "desc" },
                   select: { date: true },
               })
           )?.date;
+
+    console.log(targetDate);
 
     if (!targetDate) return [];
 
@@ -41,7 +49,7 @@ export async function getNearestMarkets({
         where: {
             commodityId: commodityRecord.id,
             date: targetDate,
-            market: { state },
+            market: { state: { equals: state, mode: "insensitive" } },
         },
         include: { market: true },
         orderBy: { modalPrice: "desc" },
