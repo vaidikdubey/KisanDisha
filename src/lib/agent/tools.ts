@@ -110,25 +110,32 @@ export const toolDeclaration: FunctionDeclaration[] = [
 ];
 
 export async function executeTool(name: string, args: Record<string, unknown>) {
-    if (typeof args.commodity !== "string")
-        throw new Error(
-            `Missing required parameter "commodity" for tool ${name}`,
-        );
-
     switch (name) {
         case "get_available_commodities":
             return getAvailableCommodities();
         case "get_available_locations":
             return getAvailableLocations();
         case "get_prices":
+            if (!args.commodity || typeof args.commodity !== "string")
+                throw new Error(
+                    `Missing required parameter "commodity" for tool ${name}`,
+                );
             return getPrices(
                 args as unknown as Parameters<typeof getPrices>[0],
             );
         case "get_price_trends":
+            if (!args.commodity || typeof args.commodity !== "string")
+                throw new Error(
+                    `Missing required parameter "commodity" for tool ${name}`,
+                );
             return getPriceTrends(
                 args as unknown as Parameters<typeof getPriceTrends>[0],
             );
         case "get_nearest_market":
+            if (!args.commodity || typeof args.commodity !== "string")
+                throw new Error(
+                    `Missing required parameter "commodity" for tool ${name}`,
+                );
             return getNearestMarkets(
                 args as Parameters<typeof getNearestMarkets>[0],
             );
