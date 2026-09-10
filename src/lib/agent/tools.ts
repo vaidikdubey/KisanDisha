@@ -1,20 +1,22 @@
 import { getPriceTrends, getPrices } from "@/lib/queries/prices";
-import {FunctionDeclaration, Type} from "@google/genai"
+import { FunctionDeclaration, Type } from "@google/genai";
 import { getNearestMarkets } from "@/lib/queries/nearestMarkets";
 import { getAvailableCommodities } from "../queries/availableCommodities";
+import { getAvailableLocations } from "../queries/availableLocations";
 
 export const toolDeclaration: FunctionDeclaration[] = [
     {
         name: "get_available_commodities",
         description:
-            "Get a list of all available commodities in the database.",
-        parameters: {
-            type: Type.OBJECT,
-            properties: {},
-            required: [],
-        },
+            "Get the exact list of commodity names in the system. Government data sometimes stores names with qualifiers (e.g. 'Paddy(Common)' rather than 'Paddy') - call this FIRST whenever you're not certain of the exact spelling before calling other tools with a commodity name.",
+        parameters: { type: Type.OBJECT, properties: {} },
     },
-    {},
+    {
+        name: "get_available_locations",
+        description:
+            "Get the exact list of states and districts in the system. Call this FIRST whenever you're not certain of the exact spelling or whether the data for a state or district exists before calling other tools with a state or district name.",
+        parameters: { type: Type.OBJECT, properties: {} },
+    },
     {
         name: "get_prices",
         description:
@@ -26,7 +28,10 @@ export const toolDeclaration: FunctionDeclaration[] = [
                     type: Type.STRING,
                     description: "Crop name. e.g. Tomato",
                 },
-                state: { type: Type.STRING, description: "State name, optional" },
+                state: {
+                    type: Type.STRING,
+                    description: "State name, optional",
+                },
                 district: {
                     type: Type.STRING,
                     description: "District name, optional",
@@ -56,7 +61,10 @@ export const toolDeclaration: FunctionDeclaration[] = [
                     type: Type.STRING,
                     description: "Crop name. e.g. Tomato",
                 },
-                state: { type: Type.STRING, description: "State name, optional" },
+                state: {
+                    type: Type.STRING,
+                    description: "State name, optional",
+                },
                 district: {
                     type: Type.STRING,
                     description: "District name, optional",
@@ -91,7 +99,10 @@ export const toolDeclaration: FunctionDeclaration[] = [
                     type: Type.STRING,
                     description: "District name, optional",
                 },
-                date: { type: Type.STRING, description: "YYYY-MM-DD, optional" },
+                date: {
+                    type: Type.STRING,
+                    description: "YYYY-MM-DD, optional",
+                },
             },
             required: ["commodity", "state"],
         },
@@ -107,6 +118,8 @@ export async function executeTool(name: string, args: Record<string, unknown>) {
     switch (name) {
         case "get_available_commodities":
             return getAvailableCommodities();
+        case "get_available_locations":
+            return getAvailableLocations();
         case "get_prices":
             return getPrices(
                 args as unknown as Parameters<typeof getPrices>[0],

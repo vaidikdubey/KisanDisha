@@ -1,14 +1,7 @@
-import { prisma } from "@/lib/prisma";
+import { getAvailableLocations } from "@/lib/queries/availableLocations";
 
 export async function GET(): Promise<Response> {
-    const markets = await prisma.market.findMany({
-        distinct: ["state", "district"],
-        select: {
-            state: true,
-            district: true,
-        },
-        orderBy: [{ state: "asc" }, { district: "asc" }],
-    });
+    const markets = await getAvailableLocations();
 
     return Response.json(
         {
