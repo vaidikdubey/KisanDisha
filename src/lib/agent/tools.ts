@@ -1,31 +1,31 @@
 import { getPriceTrends, getPrices } from "@/lib/queries/prices";
+import {FunctionDeclaration, Type} from "@google/genai"
 import { getNearestMarkets } from "@/lib/queries/nearestMarkets";
 
-export const toolDeclaration = [
+export const toolDeclaration: FunctionDeclaration[] = [
     {
-        type: "function",
         name: "get_prices",
         description:
             "Get recent market prices for a commodity, optionally filtered by state, district, and date range.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
                 commodity: {
-                    type: "string",
+                    type: Type.STRING,
                     description: "Crop name. e.g. Tomato",
                 },
-                state: { type: "string", description: "State name, optional" },
+                state: { type: Type.STRING, description: "State name, optional" },
                 district: {
-                    type: "string",
+                    type: Type.STRING,
                     description: "District name, optional",
                 },
                 startDate: {
-                    type: "string",
+                    type: Type.STRING,
                     description:
                         "Start Date for price filter. YYYY-MM-DD, optional",
                 },
                 endDate: {
-                    type: "string",
+                    type: Type.STRING,
                     description:
                         "End date for price filter. YYYY-MM-DD, optional",
                 },
@@ -34,29 +34,28 @@ export const toolDeclaration = [
         },
     },
     {
-        type: "function",
         name: "get_price_trends",
         description:
             "Get the average daily price trend for a commodity over a date range, showing whether prices are rising or falling.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
                 commodity: {
-                    type: "string",
+                    type: Type.STRING,
                     description: "Crop name. e.g. Tomato",
                 },
-                state: { type: "string", description: "State name, optional" },
+                state: { type: Type.STRING, description: "State name, optional" },
                 district: {
-                    type: "string",
+                    type: Type.STRING,
                     description: "District name, optional",
                 },
                 startDate: {
-                    type: "string",
+                    type: Type.STRING,
                     description:
                         "Start Date for price trends filter. YYYY-MM-DD, optional",
                 },
                 endDate: {
-                    type: "string",
+                    type: Type.STRING,
                     description:
                         "End date for price trends filter. YYYY-MM-DD, optional",
                 },
@@ -65,23 +64,22 @@ export const toolDeclaration = [
         },
     },
     {
-        type: "function",
         name: "get_nearest_market",
         description:
             "Get markets ranked by proximity (same district first, then rest of state) and price, to recommend the best place to sell a commodity.",
         parameters: {
-            type: "object",
+            type: Type.OBJECT,
             properties: {
                 commodity: {
-                    type: "string",
+                    type: Type.STRING,
                     description: "Crop name, e.g. Tomato",
                 },
-                state: { type: "string", description: "State name" },
+                state: { type: Type.STRING, description: "State name" },
                 district: {
-                    type: "string",
+                    type: Type.STRING,
                     description: "District name, optional",
                 },
-                date: { type: "string", description: "YYYY-MM-DD, optional" },
+                date: { type: Type.STRING, description: "YYYY-MM-DD, optional" },
             },
             required: ["commodity", "state"],
         },
