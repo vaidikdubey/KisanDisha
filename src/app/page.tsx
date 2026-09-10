@@ -172,7 +172,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {/* Feature 1 */}
-            <div className="feature-card relative z-10 bg-card border border-border p-8 rounded-3xl shadow-sm cursor-default">
+            <Link href="/prices" className="feature-card relative z-10 bg-card border border-border p-8 rounded-3xl shadow-sm cursor-default">
               <div className="card-bg-glow absolute inset-0 bg-primary/5 rounded-3xl opacity-0 -z-10 pointer-events-none"></div>
               <div className="icon-float w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary">
                 <TrendingUp className="w-8 h-8" />
@@ -184,10 +184,10 @@ export default function LandingPage() {
               <p className="text-muted-foreground leading-relaxed">
                 Daily, automated updates directly from the government&apos;s Agmarknet API. Compare historical trends back to 2023.
               </p>
-            </div>
+            </Link>
 
             {/* Feature 2 */}
-            <div className="feature-card relative z-10 bg-card border border-primary/20 p-8 rounded-3xl shadow-md cursor-default">
+            <Link href="/chat" className="feature-card relative z-10 bg-card border border-primary/20 p-8 rounded-3xl shadow-md cursor-default">
               <div className="card-bg-glow absolute inset-0 bg-primary/10 rounded-3xl opacity-0 -z-10 pointer-events-none"></div>
               <div className="icon-float w-14 h-14 rounded-2xl bg-primary flex items-center justify-center mb-6 text-primary-foreground shadow-lg">
                 <Bot className="w-8 h-8" />
@@ -199,10 +199,10 @@ export default function LandingPage() {
               <p className="text-muted-foreground leading-relaxed">
                 Powered by Google Gemini. Just ask: <em>&ldquo;500kg tomatoes near Bhopal, where do I sell?&rdquo;</em> and get a grounded recommendation.
               </p>
-            </div>
+            </Link>
 
             {/* Feature 3 */}
-            <div className="feature-card relative z-10 bg-card border border-border p-8 rounded-3xl shadow-sm cursor-default">
+            <Link href="/nearby" className="feature-card relative z-10 bg-card border border-border p-8 rounded-3xl shadow-sm cursor-default">
               <div className="card-bg-glow absolute inset-0 bg-primary/5 rounded-3xl opacity-0 -z-10 pointer-events-none"></div>
               <div className="icon-float w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-6 text-primary">
                 <MapPin className="w-8 h-8" />
@@ -214,7 +214,7 @@ export default function LandingPage() {
               <p className="text-muted-foreground leading-relaxed">
                 Find the nearest markets with the best prices, ranked by your home region and crop preferences.
               </p>
-            </div>
+            </Link>
           </div>
         </div>
       </section>
