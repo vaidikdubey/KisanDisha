@@ -8,6 +8,7 @@ import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import * as z from "zod";
 import gsap from "gsap";
+import { useSearchParams } from "next/navigation";
 
 //Shadcn components
 import {
@@ -30,6 +31,9 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "@/components/ui/toast";
 
 const SignInPage = () => {
+    const searchParams = useSearchParams();
+    const callbackUrl = searchParams.get("callbackUrl") || "home";
+
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);
 
@@ -48,7 +52,7 @@ const SignInPage = () => {
 
         const result = await signIn("credentials", {
             redirect: true,
-            callbackUrl: "/home",
+            callbackUrl,
             email: data.email,
             password: data.password,
         });
@@ -73,7 +77,7 @@ const SignInPage = () => {
 
     //Google/OAuth sign-in handler
     const handleOAuthSignIn = (provider: string) => {
-        signIn(provider, { callbackUrl: "/home" });
+        signIn(provider, { callbackUrl });
     };
 
     const cardRef = useRef<HTMLDivElement>(null);
