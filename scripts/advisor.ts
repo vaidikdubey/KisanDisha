@@ -23,11 +23,12 @@ function isRateLimitError(error: unknown): boolean {
     return has429Status || hasRateLimitMessage;
 }
 
+// Exponential reties: 12s, 24s, 48s...
 async function sendMessageWithRetry(
     chat: ReturnType<typeof ai.chats.create>,
     message: Parameters<typeof chat.sendMessage>[0]["message"],
     retries = 5,
-    baseDelayMs = 2000,
+    baseDelayMs = 12000, //12 sec
 ) {
     for (let attempt = 0; attempt < retries; attempt++) {
         try {
@@ -83,13 +84,15 @@ async function runAdvisor(question: string) {
 
 // Perfect result, all tool call are handled by the agent and the final answer is correct
 // runAdvisor("I have 500kg of wheat near Indore, where should I sell").catch(console.error)
+
 // Perfect result, since ambiguous question, safely asks for required info from user
 // runAdvisor("Where should I sell my crop?").catch(console.error)
 
-runAdvisor(
-    "I have 500kg of mangoes. Can you advice me where to sell them? I am from UP",
-).catch(console.error);
+//Perfect result, since district was not mentioned it plotted for nearby states and mandis. Also, as UP doesn't have any mango mandis listed in DB it gave the proper suggestions and also asked to provide district for more precise results.
+// runAdvisor(
+//     "I have 500kg of mangoes. Can you advice me where to sell them? I am from UP",
+// ).catch(console.error);
 
-// runAdvisor("Where should I sell my crop?").catch(console.error)
+runAdvisor("I am from Goa, what are the top 3 crops which I can grow which provides me with the most revenue?").catch(console.error)
 
 // runAdvisor("Where should I sell my crop?").catch(console.error)
