@@ -1,8 +1,20 @@
 import { getPriceTrends, getPrices } from "@/lib/queries/prices";
 import {FunctionDeclaration, Type} from "@google/genai"
 import { getNearestMarkets } from "@/lib/queries/nearestMarkets";
+import { getAvailableCommodities } from "../queries/availableCommodities";
 
 export const toolDeclaration: FunctionDeclaration[] = [
+    {
+        name: "get_available_commodities",
+        description:
+            "Get a list of all available commodities in the database.",
+        parameters: {
+            type: Type.OBJECT,
+            properties: {},
+            required: [],
+        },
+    },
+    {},
     {
         name: "get_prices",
         description:
@@ -93,6 +105,8 @@ export async function executeTool(name: string, args: Record<string, unknown>) {
         );
 
     switch (name) {
+        case "get_available_commodities":
+            return getAvailableCommodities();
         case "get_prices":
             return getPrices(
                 args as unknown as Parameters<typeof getPrices>[0],
