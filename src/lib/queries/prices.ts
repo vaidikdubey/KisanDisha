@@ -1,3 +1,4 @@
+import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "../prisma";
 
 export interface PriceQueryParams {
@@ -30,20 +31,20 @@ export async function getPrices({
     page = 1,
     limit = 20,
 }: PriceQueryParams) {
-    const commodityRecord = await prisma.commodity.findUnique({
+    const commodityRecord = await prisma.commodity.findFirst({
         where: {
-            name: commodity,
+            name: { equals: commodity, mode: "insensitive" },
         },
     });
 
     if (!commodityRecord)
         throw new CommodityNotFoundError(`Commodity "${commodity}" not found`);
 
-    const whereClause = {
+    const whereClause: Prisma.MarketPriceWhereInput = {
         commodityId: commodityRecord.id,
         market: {
-            ...(state && { state }),
-            ...(district && { district }),
+            ...(state && { state: {equals: state, mode: "insensitive"} }),
+            ...(district && { district: {equals: district, mode: "insensitive"} }),
         },
         ...(startDate || endDate
             ? {
@@ -56,7 +57,7 @@ export async function getPrices({
     };
 
     const [prices, total] = await Promise.all([
-        await prisma.marketPrice.findMany({
+        prisma.marketPrice.findMany({
             where: whereClause,
             include: {
                 market: true,
@@ -65,7 +66,7 @@ export async function getPrices({
             skip: (page - 1) * limit,
             take: limit,
         }),
-        await prisma.marketPrice.count({ where: whereClause }),
+        prisma.marketPrice.count({ where: whereClause }),
     ]);
 
     return { prices, total, page, limit };
@@ -79,9 +80,9 @@ export async function getPriceTrends({
     endDate,
     marketId,
 }: TrendsQueryParams) {
-    const commodityRecord = await prisma.commodity.findUnique({
+    const commodityRecord = await prisma.commodity.findFirst({
         where: {
-            name: commodity,
+            name: { equals: commodity, mode: "insensitive" },
         },
     });
 
@@ -94,8 +95,8 @@ export async function getPriceTrends({
             commodityId: commodityRecord.id,
             ...(marketId && { marketId }),
             market: {
-                ...(state && { state }),
-                ...(district && { district }),
+                ...(state && { state: {equals: state, mode: "insensitive"} }),
+                ...(district && { district: {equals: district, mode: "insensitive"} }),
             },
             ...(startDate || endDate
                 ? {

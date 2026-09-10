@@ -23,9 +23,9 @@ export async function getNearestMarkets({
     page: number;
     limit: number;
 }) {
-    const commodityRecord = await prisma.commodity.findUnique({
+    const commodityRecord = await prisma.commodity.findFirst({
         where: {
-            name: commodity,
+            name: { equals: commodity, mode: "insensitive" },
         },
     });
 
@@ -62,12 +62,12 @@ export async function getNearestMarkets({
     };
 
     const [markets, total] = await Promise.all([
-        await prisma.marketPrice.findMany({
+        prisma.marketPrice.findMany({
             where: whereClause,
             include: { market: true },
             orderBy: { modalPrice: "desc" },
         }),
-        await prisma.marketPrice.count({
+        prisma.marketPrice.count({
             where: whereClause,
         }),
     ]);
