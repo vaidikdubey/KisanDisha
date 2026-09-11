@@ -19,7 +19,7 @@ export async function POST(request: Request): Promise<Response> {
             {
                 success: true,
                 message: "Advisor response successful",
-                result,
+                data: result,
             },
             { status: 200 },
         );
