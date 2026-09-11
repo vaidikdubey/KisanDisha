@@ -122,6 +122,7 @@ export const PricesTable = ({
                                         });
                                     }}
                                     className="cursor-pointer"
+                                    title="Click to view market trends graph"
                                 >
                                     <TableCell className="font-mono text-muted-foreground">
                                         {(page - 1) * limit + idx + 1}.
