@@ -1,6 +1,6 @@
-import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
-import { executeTool, toolDeclaration } from "@/lib/agent/tools";
+import type { Content } from "@google/genai";
+import { executeTool, toolDeclaration } from "./tools";
 
 interface GeminiErrorInfo {
     is429: boolean;
@@ -104,13 +104,14 @@ All these pages are within the scope of the application and can be used to make 
 
 Never answer out-of-scope questions just because you technically can. Staying focused is more valuable than being generically helpful.`;
 
-async function runAdvisor(question: string) {
+export async function runAdvisor(question: string, history: Content[] = []) {
     const chat = ai.chats.create({
         model: "gemini-3.5-flash-lite",
         config: {
             systemInstruction: SYSTEM_INSTRUCTION,
             tools: [{ functionDeclarations: toolDeclaration }],
         },
+        history,
     });
 
     let response = await sendMessageWithRetry(chat, question);
@@ -119,10 +120,6 @@ async function runAdvisor(question: string) {
         const functionResponseParts = [];
 
         for (const call of response.functionCalls) {
-            console.log(
-                `Tool call: ${call.name} (${JSON.stringify(call.args)})`,
-            );
-
             const result = await executeTool(
                 call.name!,
                 call.args as Record<string, unknown>,
@@ -134,42 +131,13 @@ async function runAdvisor(question: string) {
                     id: call.id,
                 },
             });
-            console.log("Tool result: ", result);
         }
 
         response = await sendMessageWithRetry(chat, functionResponseParts);
     }
 
-    console.log("\nFinal answer: ", response.text);
+    return {
+        text: response.text,
+        history: chat.getHistory() // full updated conversation, since API calls are stateless
+    };
 }
-
-// Perfect result, all tool call are handled by the agent and the final answer is correct
-// runAdvisor("I have 500kg of wheat near Indore, where should I sell").catch(console.error)
-
-// Perfect result, since ambiguous question, safely asks for required info from user
-// runAdvisor("Where should I sell my crop?").catch(console.error)
-
-//Perfect result, since district was not mentioned it plotted for nearby states and mandis. Also, as UP doesn't have any mango mandis listed in DB it gave the proper suggestions and also asked to provide district for more precise results.
-// runAdvisor(
-//     "I have 500kg of mangoes. Can you advice me where to sell them? I am from UP",
-// ).catch(console.error);
-
-// Excellent response. Very gracefully handled the missing data for Goa from DB with providing exact reason and also advising for crops (as per what AI does) without just leaving the question un-answered.
-// runAdvisor(
-//     "I am from Goa, what are the top 3 crops which I can grow which provides me with the most revenue?",
-// ).catch(console.error);
-
-// Attempt 1 (without system istruction): Failed to answer this un-related question. Instead of gracefully declining the request, the ai model just went ahead and behaved like a normal model and answered the question.
-// runAdvisor("How can I compute the area of a triangle using a circle?").catch(
-//     console.error,
-// );
-
-// Attempt 2 (with system istruction): Excellent response. Graciously declined the question and advised about what the application is and how can the chatbot help.
-// runAdvisor("How can I compute the area of a triangle using a circle?").catch(
-//     console.error,
-// );
-
-// Excellent response. Used the tool to get the actual freshness of data and properly answered.
-// runAdvisor("how up to date is this data?").catch(
-//     console.error,
-// );
