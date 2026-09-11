@@ -15,7 +15,7 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Gemini error messages parsing to determine type of error and also extract the retry delay provided by gemini in error message.
-function parsedGeminiError(error: unknown): GeminiErrorInfo {
+export function parsedGeminiError(error: unknown): GeminiErrorInfo {
     const message = error instanceof Error ? error.message : String(error);
     const is429 =
         message.includes(`"code":429`) ||
@@ -53,7 +53,7 @@ async function sendMessageWithRetry(
 
             if (info.isPerMinute && attempt < retries - 1) {
                 const delay = info.retryDelaySeconds
-                    ? info.retryDelaySeconds * 1000 * 500
+                    ? info.retryDelaySeconds * 1000 + 500
                     : baseDelayMs * Math.pow(2, attempt) + Math.random() * 500;
 
                 console.warn(
