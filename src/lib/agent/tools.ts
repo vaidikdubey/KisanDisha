@@ -3,6 +3,7 @@ import { FunctionDeclaration, Type } from "@google/genai";
 import { getNearestMarkets } from "@/lib/queries/nearestMarkets";
 import { getAvailableCommodities } from "../queries/availableCommodities";
 import { getAvailableLocations } from "../queries/availableLocations";
+import { getDataFreshness } from "../queries/dataFreshness";
 
 export const toolDeclaration: FunctionDeclaration[] = [
     {
@@ -15,6 +16,11 @@ export const toolDeclaration: FunctionDeclaration[] = [
         name: "get_available_locations",
         description:
             "Get the exact list of states and districts in the system. Call this FIRST whenever you're not certain of the exact spelling or whether the data for a state or district exists before calling other tools with a state or district name.",
+        parameters: { type: Type.OBJECT, properties: {} },
+    },
+    {
+        name: "get_data_freshness",
+        description: "Get the last time the data was updated in the system.",
         parameters: { type: Type.OBJECT, properties: {} },
     },
     {
@@ -115,6 +121,8 @@ export async function executeTool(name: string, args: Record<string, unknown>) {
             return getAvailableCommodities();
         case "get_available_locations":
             return getAvailableLocations();
+        case "get_data_freshness":
+            return getDataFreshness();
         case "get_prices":
             if (!args.commodity || typeof args.commodity !== "string")
                 throw new Error(
