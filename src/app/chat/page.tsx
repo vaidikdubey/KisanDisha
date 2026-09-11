@@ -15,6 +15,7 @@ import {
     HelpCircle,
     LineChart,
     Copy,
+    Home,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -179,7 +180,7 @@ export default function ChatPage() {
     };
 
     return (
-        <div className="w-full max-w-[98%] lg:max-w-[92%] mx-auto px-2 sm:px-4 py-2 sm:py-3 flex-1 flex flex-col min-h-0 h-full gap-3 sm:gap-4">
+        <div className="w-full max-w-[98%] lg:max-w-[92%] mx-auto px-2 sm:px-4 py-2 sm:py-3 flex-1 flex flex-col min-h-0 h-full gap-3 sm:gap-4 relative">
             {/* Utility Header */}
             <div className="flex items-center justify-between pb-2.5 sm:pb-3 border-b border-border/40 shrink-0">
                 <div className="flex items-center gap-2.5 sm:gap-4">
@@ -201,6 +202,13 @@ export default function ChatPage() {
                 </div>
 
                 <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm font-medium">
+                    <Link
+                        href="/home"
+                        className="sm:flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                        <Home className="w-4 h-4" />
+                        <span className="hidden sm:block">Home</span>
+                    </Link>
                     <Link
                         href="/prices"
                         className="hidden sm:flex items-center gap-1.5 text-muted-foreground hover:text-foreground transition-colors"
