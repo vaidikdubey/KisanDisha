@@ -14,11 +14,13 @@ import {
     MapPin,
     HelpCircle,
     LineChart,
+    Copy,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import axios, { AxiosError } from "axios";
 import { ApiResponse } from "@/types/ApiResponse";
+import { toast } from "@/components/ui/toast";
 
 interface GeminiPart {
     text: string;
@@ -165,6 +167,17 @@ export default function ChatPage() {
         setInput("");
     };
 
+    const copyToClipboard = (text: string) => {
+        if (text.trim().length === 0) return;
+
+        navigator.clipboard.writeText(text);
+        toast.add({
+            title: "Copied to clipboard",
+            description: "The text has been copied to your clipboard.",
+            type: "success",
+        });
+    };
+
     return (
         <div className="w-full max-w-[98%] lg:max-w-[92%] mx-auto px-2 sm:px-4 py-2 sm:py-3 flex-1 flex flex-col min-h-0 h-full gap-3 sm:gap-4">
             {/* Utility Header */}
@@ -270,8 +283,16 @@ export default function ChatPage() {
                                             <p className="text-xs sm:text-sm md:text-base leading-relaxed whitespace-pre-wrap wrap-break-words">
                                                 {msg.text}
                                             </p>
-                                            <span className="block text-[9px] sm:text-[10px] text-emerald-200/80 text-right font-mono">
+                                            <span className="text-[9px] sm:text-[10px] text-emerald-200/80 text-right font-mono flex justify-end gap-2">
                                                 {msg.timestamp}
+                                                <Copy
+                                                    onClick={() =>
+                                                        copyToClipboard(
+                                                            msg.text,
+                                                        )
+                                                    }
+                                                    className="text-white dark:text-black w-3.5 h-3.5 cursor-pointer"
+                                                />
                                             </span>
                                         </div>
                                         <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shrink-0 mt-0.5">
@@ -341,8 +362,14 @@ export default function ChatPage() {
                                                 {msg.text}
                                             </ReactMarkdown>
                                         </div>
-                                        <span className="block text-[9px] sm:text-[10px] text-muted-foreground/60 font-mono">
+                                        <span className="flex gap-2 text-[9px] sm:text-[10px] text-muted-foreground/60 font-mono">
                                             {msg.timestamp}
+                                            <Copy
+                                                onClick={() =>
+                                                    copyToClipboard(msg.text)
+                                                }
+                                                className="text-foreground w-3.5 h-3.5 cursor-pointer"
+                                            />
                                         </span>
                                     </div>
                                 </div>
