@@ -84,7 +84,6 @@ export default function ChatPage() {
     }, []);
 
     useEffect(() => {
-        //eslint-disable-next-line
         fetchFreshness();
     }, [fetchFreshness]);
 
@@ -118,14 +117,6 @@ export default function ChatPage() {
                 question: query,
                 history: history,
             });
-
-            if (res.status !== 200) {
-                throw new Error(`Server returned status code ${res.status}`);
-            }
-
-            if (res.data.error) {
-                throw new Error(res.data.error);
-            }
 
             const advisorText =
                 res.data.data.text || "No response text received from advisor.";
