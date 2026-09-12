@@ -268,11 +268,20 @@ const SignInPage = () => {
                                         fill="#EA4335"
                                     />
                                 </svg>
-                                Sign In with Google
+                                <span className="hidden md:block">Sign In with Google</span>
                             </Button>
                         </div>
 
-                        <div>
+                        <div className="flex flex-col gap-2">
+                            <p>
+                                Don&apos;t remember your password?{" "}
+                                <Link
+                                    href="/forgot-password"
+                                    className="text-blue-600 hover:text-blue-800"
+                                >
+                                    Reset it?
+                                </Link>
+                            </p>
                             <p>
                                 Don&apos;t have an account?{" "}
                                 <Link
