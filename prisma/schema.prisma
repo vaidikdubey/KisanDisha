@@ -40,6 +40,8 @@ model User {
   district               String? //Optional for initial OAuth
   cropPreferences        String[]     @default([])
 
+  passwordResetId PasswordReset[]
+
   isOnboarding Boolean @default(false) //Custom flag for onboarding check for OAuth
 
   createdAt DateTime @default(now())
@@ -91,47 +93,60 @@ model VerificationToken {
   @@id([identifier, token])
 }
 
+model PasswordReset {
+  id                String   @id @default(uuid())
+  userId            String
+  token             String   @unique
+  expiresAt         DateTime
+  previousPasswords String[]
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model Commodity {
-  id String @id @default(uuid())
-  name String  @unique
+  id   String @id @default(uuid())
+  name String @unique
 
   prices MarketPrice[]
 }
 
 model Market {
-  id String @id @default(uuid())
-  name String
-  state String
+  id       String @id @default(uuid())
+  name     String
+  state    String
   district String
-  
+
   prices MarketPrice[]
 
   @@unique([name, state, district])
 }
 
 model MarketPrice {
-  id String @id @default(uuid())
+  id          String   @id @default(uuid())
   commodityId String
-  marketId String
-  date DateTime
-  variety String?
-  minPrice Float
-  maxPrice Float
-  modalPrice Float
+  marketId    String
+  date        DateTime
+  variety     String?
+  minPrice    Float
+  maxPrice    Float
+  modalPrice  Float
 
   commodity Commodity @relation(fields: [commodityId], references: [id])
-  market Market @relation(fields: [marketId], references: [id])
+  market    Market    @relation(fields: [marketId], references: [id])
 
   @@unique([commodityId, marketId, date, variety])
 }
 
 //For tracking daily ingestions
 model IngestionJob {
-  id String @id @default(uuid())
-  status IngestionStatus
-  startedAt DateTime @default(now())
-  completedAt DateTime?
-  recordsProcessed Int @default(0)
-  recordsFailed Int @default(0)
-  errorMessage String?
+  id               String          @id @default(uuid())
+  status           IngestionStatus
+  startedAt        DateTime        @default(now())
+  completedAt      DateTime?
+  recordsProcessed Int             @default(0)
+  recordsFailed    Int             @default(0)
+  errorMessage     String?
 }
