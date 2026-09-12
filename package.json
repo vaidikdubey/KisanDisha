@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "ingest": "tsx scripts/ingest.ts"
+    "ingest": "tsx scripts/ingest.ts",
+    "build:lambda": "npx esbuild lambda/handler.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist-lambda/handler.js --define:import.meta.url=\"file:///var/task/handler.js\""
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

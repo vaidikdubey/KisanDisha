@@ -23,7 +23,7 @@ async function fetchWithRetry(state: string, date: string, offset: number, retri
           "filters[state]": state,
           "filters[arrival_date]": date,
         },
-        timeout: 15000,
+        timeout: 30000,
       });
     } catch (error) {
       if (i === retries - 1) throw error;

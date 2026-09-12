@@ -27,12 +27,12 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Search } from "lucide-react";
 
-interface Commodity {
+export interface Commodity {
   id?: string;
   name?: string;
 }
 
-interface LocationItem {
+export interface LocationItem {
   state?: string;
   district?: string;
 }
