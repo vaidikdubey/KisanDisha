@@ -2,7 +2,7 @@ import { withCache } from "@/lib/cache";
 import { getDataFreshness } from "@/lib/queries/dataFreshness";
 
 export async function GET(): Promise<Response> {
-    const data = withCache("data:freshness", 60 * 60, () => getDataFreshness());
+    const data = await withCache("data:freshness", 60 * 60, () => getDataFreshness());
 
     return Response.json(
         {

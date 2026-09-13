@@ -247,7 +247,7 @@ export const NearestMarketFilterBar = () => {
                     </span>
                   ) : (
                     <span className="text-xs md:text-sm text-muted-foreground">
-                      Default (Today)
+                      Default (Y&apos;day)
                     </span>
                   )}
                 </Button>
