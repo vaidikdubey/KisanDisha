@@ -78,6 +78,7 @@ export async function PATCH(request: NextRequest): Promise<Response> {
             email,
             newPassword,
             mobileNumber,
+            currentPassword,
             state,
             district,
             cropPreferences,
@@ -131,8 +132,6 @@ export async function PATCH(request: NextRequest): Promise<Response> {
         }
 
         if (newPassword) {
-            const { currentPassword } = await request.json();
-
             if (!currentPassword)
                 return Response.json(
                     {
