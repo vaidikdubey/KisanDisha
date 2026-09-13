@@ -32,7 +32,7 @@ import { toast } from "@/components/ui/toast";
 
 const SignInPage = () => {
     const searchParams = useSearchParams();
-    const callbackUrl = searchParams.get("callbackUrl") || "home";
+    const callbackUrl = searchParams.get("callbackUrl") || "/home";
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const [passwordVisible, setPasswordVisible] = useState<boolean>(false);

@@ -4,6 +4,7 @@ import { authOptions } from "../auth/[...nextauth]/options";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import bcrypt from "bcryptjs";
+import { informPasswordResetEmail } from "@/helpers/informPasswordResetEmail";
 
 export async function GET(): Promise<Response> {
     const session = await getServerSession(authOptions);
@@ -194,6 +195,23 @@ export async function PATCH(request: NextRequest): Promise<Response> {
                 updatedAt: true,
             },
         });
+
+        if (newPassword) {
+            const passwordUpdateDate: string = new Intl.DateTimeFormat(
+                "en-US",
+                {
+                    dateStyle: "full",
+                    timeStyle: "short",
+                    timeZone: "Asia/Kolkata",
+                },
+            ).format(Date.now());
+
+            await informPasswordResetEmail(
+                updatedUser.name,
+                updatedUser.email,
+                passwordUpdateDate,
+            );
+        }
 
         return Response.json(
             {

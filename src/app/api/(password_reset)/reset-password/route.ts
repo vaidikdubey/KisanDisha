@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
+import {informPasswordResetEmail} from "@/helpers/informPasswordResetEmail"
 
 export async function POST(request: Request): Promise<Response> {
     const { password, token } = await request.json();
@@ -106,6 +107,14 @@ export async function POST(request: Request): Promise<Response> {
                 },
             }),
         ]);
+
+        const passwordUpdateDate: string = new Intl.DateTimeFormat('en-US', {
+            dateStyle: 'full',
+            timeStyle: 'short',
+            timeZone: 'Asia/Kolkata'
+        }).format(Date.now())
+
+        await informPasswordResetEmail(updatedUser.name, updatedUser.email, passwordUpdateDate)
 
         return Response.json(
             {
