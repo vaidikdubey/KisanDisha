@@ -49,7 +49,7 @@ export default function PasswordChangedEmail({
         </Row>
         <Row>
           <Text style={{ marginTop: '10px', marginBottom: '20px' }}>
-            If you made this change, you can safely ignore this email—no further action is needed.
+            If you made this change, you can safely ignore this email - no further action is needed.
           </Text>
         </Row>
         <Row>

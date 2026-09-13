@@ -1,7 +1,17 @@
 import { NextRequest } from "next/server";
 import { getPrices, CommodityNotFoundError } from "@/lib/queries/prices";
+import { apiRateLimit } from "@/lib/ratelimit";
 
 export async function GET(request: NextRequest): Promise<Response> {
+    //Rate limiting logic
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    const { success } = await apiRateLimit.limit(ip)
+
+    if (!success) return Response.json({
+        success: false,
+        error: "You are sending requests too quickly - please wait a moment."
+    }, {status: 429})
+
     try {
         const searchParams = request.nextUrl.searchParams;
 

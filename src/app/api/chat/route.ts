@@ -1,6 +1,20 @@
 import { parsedGeminiError, runAdvisor } from "@/lib/agent/advisor";
+import { chatRateLimit } from "@/lib/ratelimit";
 
 export async function POST(request: Request): Promise<Response> {
+    //Rate limiting logic
+    const ip = request.headers.get("x-forwarded-for") ?? "unknown";
+    const { success } = await chatRateLimit.limit(ip);
+
+    if (!success)
+        return Response.json(
+            {
+                success: false,
+                error: "You're sending messages too quickly - please wait a moment.",
+            },
+            { status: 429 },
+        );
+
     const { question, history = [] } = await request.json();
 
     if (!question)
