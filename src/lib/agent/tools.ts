@@ -4,6 +4,7 @@ import { getNearestMarkets } from "@/lib/queries/nearestMarkets";
 import { getAvailableCommodities } from "../queries/availableCommodities";
 import { getAvailableLocations } from "../queries/availableLocations";
 import { getDataFreshness } from "../queries/dataFreshness";
+import { withCache } from "../cache";
 
 export const toolDeclaration: FunctionDeclaration[] = [
     {
@@ -118,35 +119,51 @@ export const toolDeclaration: FunctionDeclaration[] = [
 export async function executeTool(name: string, args: Record<string, unknown>) {
     switch (name) {
         case "get_available_commodities":
-            return getAvailableCommodities();
+            return withCache("commodities:list", 24 * 60 * 60, () =>
+                getAvailableCommodities(),
+            );
         case "get_available_locations":
-            return getAvailableLocations();
+            return withCache("locations:list", 24 * 60 * 60, () =>
+                getAvailableLocations(),
+            );
         case "get_data_freshness":
-            return getDataFreshness();
-        case "get_prices":
+            return withCache("data:freshness", 60 * 60, () =>
+                getDataFreshness(),
+            );
+        case "get_prices": {
             if (!args.commodity || typeof args.commodity !== "string")
                 throw new Error(
                     `Missing required parameter "commodity" for tool ${name}`,
                 );
-            return getPrices(
-                args as unknown as Parameters<typeof getPrices>[0],
+            const key = `tool:prices:${JSON.stringify(args)}`;
+            return withCache(key, 6 * 60 * 60, () =>
+                getPrices(args as unknown as Parameters<typeof getPrices>[0]),
             );
-        case "get_price_trends":
+        }
+        case "get_price_trends": {
             if (!args.commodity || typeof args.commodity !== "string")
                 throw new Error(
                     `Missing required parameter "commodity" for tool ${name}`,
                 );
-            return getPriceTrends(
-                args as unknown as Parameters<typeof getPriceTrends>[0],
+            const key = `tool:trends:${JSON.stringify(args)}`;
+            return withCache(key, 6 * 60 * 60, () =>
+                getPriceTrends(
+                    args as unknown as Parameters<typeof getPriceTrends>[0],
+                ),
             );
-        case "get_nearest_market":
+        }
+        case "get_nearest_market": {
             if (!args.commodity || typeof args.commodity !== "string")
                 throw new Error(
                     `Missing required parameter "commodity" for tool ${name}`,
                 );
-            return getNearestMarkets(
-                args as Parameters<typeof getNearestMarkets>[0],
+            const key = `tool:nearest:${JSON.stringify(args)}`;
+            return withCache(key, 6 * 60 * 60, () =>
+                getNearestMarkets(
+                    args as Parameters<typeof getNearestMarkets>[0],
+                ),
             );
+        }
         default:
             throw new Error(`Unknown tool: ${name}`);
     }

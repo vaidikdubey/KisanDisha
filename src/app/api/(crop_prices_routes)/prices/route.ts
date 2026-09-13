@@ -1,16 +1,21 @@
 import { NextRequest } from "next/server";
 import { getPrices, CommodityNotFoundError } from "@/lib/queries/prices";
 import { apiRateLimit } from "@/lib/ratelimit";
+import { withCache } from "@/lib/cache";
 
 export async function GET(request: NextRequest): Promise<Response> {
     //Rate limiting logic
     const ip = request.headers.get("x-forwarded-for") ?? "unknown";
-    const { success } = await apiRateLimit.limit(ip)
+    const { success } = await apiRateLimit.limit(ip);
 
-    if (!success) return Response.json({
-        success: false,
-        error: "You are sending requests too quickly - please wait a moment."
-    }, {status: 429})
+    if (!success)
+        return Response.json(
+            {
+                success: false,
+                error: "You are sending requests too quickly - please wait a moment.",
+            },
+            { status: 429 },
+        );
 
     try {
         const searchParams = request.nextUrl.searchParams;
@@ -26,15 +31,28 @@ export async function GET(request: NextRequest): Promise<Response> {
                 { status: 400 },
             );
 
-        const { prices, total, page, limit } = await getPrices({
-            commodity,
-            state: searchParams.get("state") ?? undefined,
-            district: searchParams.get("district") ?? undefined,
-            startDate: searchParams.get("startDate") ?? undefined,
-            endDate: searchParams.get("endDate") ?? undefined,
-            page: Number(searchParams.get("page")) || 1,
-            limit: Number(searchParams.get("limit")) || 20,
-        });
+        const state = searchParams.get("state") ?? undefined;
+        const district = searchParams.get("district") ?? undefined;
+        const startDate = searchParams.get("startDate") ?? undefined;
+        const endDate = searchParams.get("endDate") ?? undefined;
+        const pageNumber = Number(searchParams.get("page")) || 1;
+
+        const cacheKey = `prices:${commodity}:${state}:${district}:${startDate}:${endDate}:${pageNumber}`;
+
+        const { prices, total, page, limit } = await withCache(
+            cacheKey,
+            6 * 60 * 60,
+            () =>
+                getPrices({
+                    commodity,
+                    state,
+                    district,
+                    startDate,
+                    endDate,
+                    page: pageNumber,
+                    limit: Number(searchParams.get("limit")) || 20,
+                }),
+        );
 
         return Response.json(
             {

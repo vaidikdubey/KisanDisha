@@ -1,7 +1,10 @@
+import { withCache } from "@/lib/cache";
 import { getAvailableCommodities } from "@/lib/queries/availableCommodities";
 
 export async function GET(): Promise<Response> {
-    const commodities = await getAvailableCommodities();
+    const commodities = withCache("commodities:list", 24 * 60 * 60, () =>
+        getAvailableCommodities(),
+    );
 
     return Response.json(
         {

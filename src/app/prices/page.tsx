@@ -9,6 +9,7 @@ import { PriceTrendsChart } from "./_components/PriceTrendsChart";
 import { headers } from "next/headers";
 import { apiRateLimit } from "@/lib/ratelimit";
 import { RateLimitToast } from "@/components/RateLimitedToast";
+import { withCache } from "@/lib/cache";
 
 export default async function PricesPage({
     searchParams,
@@ -49,25 +50,33 @@ export default async function PricesPage({
     let commodityMissing = false;
 
     if (success) {
-        try {
-            data = await getPrices({
-                commodity: params.commodity,
-                state: params.state,
-                district: params.district,
-                startDate: params.startDate,
-                endDate: params.endDate,
-                page: Number(params.page) || 1,
-                limit: Number(params.limit) || 20,
-            });
+        const cacheKeyPrices = `prices:${params.commodity}:${params.state ?? ""}:${params.district ?? ""}:${params.startDate ?? ""}:${params.endDate ?? ""}:${params.page ?? "1"}`;
 
-            trends = await getPriceTrends({
-                commodity: params.commodity,
-                state: params.state,
-                district: params.district,
-                startDate: params.startDate,
-                endDate: params.endDate,
-                marketId: params.marketId,
-            });
+        const cacheKeyTrends = `trends:${params.commodity}:${params.state ?? ""}:${params.district ?? ""}:${params.startDate ?? ""}:${params.endDate ?? ""}:${params.marketId}`;
+
+        try {
+            data = await withCache(cacheKeyPrices, 6 * 60 * 60, () =>
+                getPrices({
+                    commodity: params.commodity!,
+                    state: params.state,
+                    district: params.district,
+                    startDate: params.startDate,
+                    endDate: params.endDate,
+                    page: Number(params.page) || 1,
+                    limit: Number(params.limit) || 20,
+                }),
+            );
+
+            trends = await withCache(cacheKeyTrends, 6 * 60 * 60, () =>
+                getPriceTrends({
+                    commodity: params.commodity!,
+                    state: params.state,
+                    district: params.district,
+                    startDate: params.startDate,
+                    endDate: params.endDate,
+                    marketId: params.marketId,
+                }),
+            );
         } catch (error) {
             if (error instanceof CommodityNotFoundError)
                 commodityMissing = true;

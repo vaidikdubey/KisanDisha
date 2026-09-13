@@ -6,6 +6,7 @@ import { NearestMarketsTable } from "./_components/NearestMarketsTable";
 import { headers } from "next/headers";
 import { apiRateLimit } from "@/lib/ratelimit";
 import { RateLimitToast } from "@/components/RateLimitedToast";
+import { withCache } from "@/lib/cache";
 
 export default async function NearestMarketsPage({
     searchParams,
@@ -52,15 +53,19 @@ export default async function NearestMarketsPage({
     const limit = isNaN(rawLimit) || rawLimit < 1 ? 20 : rawLimit;
 
     if (success) {
+        const cacheKey = `nearby:${params.commodity}:${params.state}:${params.district}:${params.date}:${page}`;
+
         try {
-            data = await getNearestMarkets({
-                commodity: params.commodity,
-                state: params.state,
-                district: params.district,
-                date: params.date,
-                page,
-                limit,
-            });
+            data = await withCache(cacheKey, 6 * 60 * 60, () =>
+                getNearestMarkets({
+                    commodity: params.commodity!,
+                    state: params.state,
+                    district: params.district,
+                    date: params.date,
+                    page,
+                    limit,
+                }),
+            );
         } catch (error) {
             if (error instanceof CommodityNotFoundError) {
                 commodityMissing = true;

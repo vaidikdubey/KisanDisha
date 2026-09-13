@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import { authOptions } from "../auth/[...nextauth]/options";
 import { prisma } from "@/lib/prisma";
 import { apiRateLimit } from "@/lib/ratelimit";
+import { withCache } from "@/lib/cache";
 
 export async function GET(request: NextRequest): Promise<Response> {
     //Rate limiting logic
@@ -68,19 +69,34 @@ export async function GET(request: NextRequest): Promise<Response> {
     const rawPage = parseInt(searchParams.get("page") || "1", 10);
     const rawLimit = parseInt(searchParams.get("limit") || "20", 10);
 
+    const state =
+        searchParams.get("state") ?? (dbUser?.state ? dbUser.state : undefined);
+    const district =
+        searchParams.get("district") ??
+        (dbUser?.district ? dbUser.district : undefined);
+    const date = searchParams.get("date") ?? undefined;
+    const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage;
+
+    const cacheKey = `nearby:${commodity}:${state}:${district}:${date}:${page}`;
+
     try {
-        const { sortedMarkets, total, page, limit } = await getNearestMarkets({
-            commodity,
-            state:
-                searchParams.get("state") ??
-                (dbUser?.state ? dbUser.state : undefined),
-            district:
-                searchParams.get("district") ??
-                (dbUser?.district ? dbUser.district : undefined),
-            date: searchParams.get("date") ?? undefined,
-            page: isNaN(rawPage) || rawPage < 1 ? 1 : rawPage,
-            limit: isNaN(rawLimit) || rawLimit < 1 ? 20 : rawLimit,
-        });
+        const { sortedMarkets, total, page, limit } = await withCache(
+            cacheKey,
+            6 * 60 * 60,
+            () =>
+                getNearestMarkets({
+                    commodity,
+                    state:
+                        searchParams.get("state") ??
+                        (dbUser?.state ? dbUser.state : undefined),
+                    district:
+                        searchParams.get("district") ??
+                        (dbUser?.district ? dbUser.district : undefined),
+                    date: searchParams.get("date") ?? undefined,
+                    page: isNaN(rawPage) || rawPage < 1 ? 1 : rawPage,
+                    limit: isNaN(rawLimit) || rawLimit < 1 ? 20 : rawLimit,
+                }),
+        );
 
         return Response.json(
             {
