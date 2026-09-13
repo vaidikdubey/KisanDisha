@@ -6,12 +6,21 @@ import {
 import { PriceFilterBar } from "./_components/PriceFilterBar";
 import { PricesTable } from "./_components/PricesTable";
 import { PriceTrendsChart } from "./_components/PriceTrendsChart";
+import { headers } from "next/headers";
+import { apiRateLimit } from "@/lib/ratelimit";
+import { RateLimitToast } from "@/components/RateLimitedToast";
 
 export default async function PricesPage({
     searchParams,
 }: {
     searchParams: Promise<{ [key: string]: string | undefined }>;
 }) {
+    //Rate limiting logic
+    const headersList = await headers();
+    const ip = headersList.get("x-forwarded-for") ?? "unknown";
+
+    const { success } = await apiRateLimit.limit(ip);
+
     const params = await searchParams;
 
     if (!params.commodity)
@@ -39,28 +48,31 @@ export default async function PricesPage({
     let trends: Awaited<ReturnType<typeof getPriceTrends>> | null = null;
     let commodityMissing = false;
 
-    try {
-        data = await getPrices({
-            commodity: params.commodity,
-            state: params.state,
-            district: params.district,
-            startDate: params.startDate,
-            endDate: params.endDate,
-            page: Number(params.page) || 1,
-            limit: Number(params.limit) || 20,
-        });
+    if (success) {
+        try {
+            data = await getPrices({
+                commodity: params.commodity,
+                state: params.state,
+                district: params.district,
+                startDate: params.startDate,
+                endDate: params.endDate,
+                page: Number(params.page) || 1,
+                limit: Number(params.limit) || 20,
+            });
 
-        trends = await getPriceTrends({
-            commodity: params.commodity,
-            state: params.state,
-            district: params.district,
-            startDate: params.startDate,
-            endDate: params.endDate,
-            marketId: params.marketId,
-        });
-    } catch (error) {
-        if (error instanceof CommodityNotFoundError) commodityMissing = true;
-        else throw error;
+            trends = await getPriceTrends({
+                commodity: params.commodity,
+                state: params.state,
+                district: params.district,
+                startDate: params.startDate,
+                endDate: params.endDate,
+                marketId: params.marketId,
+            });
+        } catch (error) {
+            if (error instanceof CommodityNotFoundError)
+                commodityMissing = true;
+            else throw error;
+        }
     }
 
     if (commodityMissing)
@@ -79,6 +91,9 @@ export default async function PricesPage({
     if (!data) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6 text-center px-4">
+                {/* Rate Limiting Toast */}
+                {!success && <RateLimitToast />}
+
                 <div className="w-full max-w-4xl p-6 rounded-xl border border-border/60 bg-background/60 backdrop-blur-md shadow-sm">
                     <PriceFilterBar />
                 </div>
@@ -93,7 +108,14 @@ export default async function PricesPage({
         );
     }
 
-    const { prices, total, limit, page } = data;
+    let prices, total, limit, page;
+
+    if (data) {
+        prices = data.prices;
+        total = data.total;
+        limit = data.limit;
+        page = data.page;
+    }
 
     // --- Dynamic Calculations ---
     const overallAvg =
@@ -261,11 +283,11 @@ export default async function PricesPage({
                 </div>
 
                 <PricesTable
-                    prices={prices}
+                    prices={prices ?? []}
                     commodity={params.commodity ?? ""}
-                    total={total}
-                    limit={limit}
-                    page={page}
+                    total={total ?? 0}
+                    limit={limit ?? 0}
+                    page={page ?? 0}
                 />
             </div>
 
