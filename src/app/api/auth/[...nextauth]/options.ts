@@ -78,17 +78,39 @@ export const authOptions: NextAuthOptions = {
             return true;
         },
 
-        async jwt({ token, user, account }) {
+        async jwt({ token, user, trigger, session }) {
             if (user) {
                 token.id = user.id;
+                const dbUser = await prisma.user.findUnique({
+                    where: { id: user.id },
+                    select: { isOnboarding: true },
+                });
+                token.isOnboarding = dbUser?.isOnboarding ?? false;
             }
+            // fires when the client calls update() after onboarding completes
+            if (trigger === "update" && session?.isOnboarding !== undefined)
+                token.isOnboarding = session.isOnboarding;
+
             return token;
         },
 
         async session({ session, token }) {
-            if (session.user && token.id) session.user.id = token.id as string;
+            if (session.user && token.id) {
+                session.user.id = token.id as string;
+                session.user.isOnboarding = token.isOnboarding as boolean
+            }
 
             return session;
+        },
+    },
+    events: {
+        async linkAccount({ user, account }) {
+            if (account.provider === "google") {
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { provider: "GOOGLE" },
+                });
+            }
         },
     },
 

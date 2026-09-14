@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Inter, Roboto_Slab } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/toast";
+import AuthSessionProvider from "@/components/session-provider";
 
 const robotoSlabHeading = Roboto_Slab({
     subsets: ["latin"],
@@ -72,8 +73,10 @@ export default function RootLayout({
             )}
         >
             <body className="min-h-full flex flex-col">
-                <Toaster />
-                {children}
+                <AuthSessionProvider>
+                    <Toaster />
+                    {children}
+                </AuthSessionProvider>
             </body>
         </html>
     );

@@ -12,6 +12,8 @@ import { z } from "zod";
 import Link from "next/link";
 import gsap from "gsap";
 import { signIn } from "next-auth/react";
+import { Commodity } from "@/types/Commodities";
+import { LocationItem } from "@/types/Locations";
 
 //ShadCn components
 import { Button } from "@/components/ui/button";
@@ -41,10 +43,6 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, ArrowRight, Eye, EyeOff, ArrowLeft } from "lucide-react";
-import {
-    LocationItem,
-    Commodity,
-} from "@/app/nearby/_components/NearestMarketFilterBar";
 
 const SignUpPage = () => {
     const router = useRouter();
@@ -778,7 +776,7 @@ const SignUpPage = () => {
                                     fill="#EA4335"
                                 />
                             </svg>
-                            Sign In with Google
+                            Sign Up with Google
                         </Button>
 
                         <div>

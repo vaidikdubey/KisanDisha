@@ -1,17 +1,17 @@
-'use client'
+"use client";
 
-import { toast } from "@/components/ui/toast"
+import { toast } from "@/components/ui/toast";
 import { onboardingSchema } from "@/schemas/onboardingSchema";
-import { ApiResponse } from "@/types/ApiResponse"
+import { ApiResponse } from "@/types/ApiResponse";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { AxiosError } from "axios";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
-import { StateRecord } from "@/types/States"
-import { DistrictRecord } from "@/types/Districts"
-import gsap from "gsap"
+import gsap from "gsap";
+import { Commodity } from "@/types/Commodities";
+import { LocationItem } from "@/types/Locations";
 
 //ShadCn components
 import { Button } from "@/components/ui/button";
@@ -41,26 +41,15 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
-
-const cropsList = [
-    { label: "Rice", value: "Rice / धान" },
-    { label: "Wheat", value: "Wheat / गेहूं" },
-    { label: "Sugarcane", value: "Sugarcane / गन्ना" },
-    { label: "Cotton", value: "Cotton / कपास" },
-    { label: "Soybean", value: "Soybean / सोयाबीन" },
-    { label: "Mustard", value: "Mustard / सरसों" },
-    { label: "Chana (Bengal Gram)", value: "Chana (Bengal Gram) / चना" },
-    { label: "Maize (Corn)", value: "Maize (Corn) / मक्का" },
-    { label: "Bajra (Pearl Millet)", value: "Bajra (Pearl Millet) / बाजरा" },
-    { label: "Potato", value: "Potato / आलू" },
-];
+import { useSession } from "next-auth/react";
 
 const OnboardingPage = () => {
+    const { update } = useSession();
     const router = useRouter();
 
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-    const [statesList, setStatesList] = useState<StateRecord[]>([]);
-    const [districtsList, setDistrictsList] = useState<DistrictRecord[]>([]);
+    const [locations, setLocations] = useState<LocationItem[]>([]);
+    const [commodities, setCommodities] = useState<Commodity[]>([]);
 
     const form = useForm<z.infer<typeof onboardingSchema>>({
         resolver: zodResolver(onboardingSchema),
@@ -72,6 +61,8 @@ const OnboardingPage = () => {
         },
     });
 
+    const selectedState = form.watch("state");
+
     const onSubmit = async (data: z.infer<typeof onboardingSchema>) => {
         setIsSubmitting(true);
 
@@ -82,6 +73,8 @@ const OnboardingPage = () => {
             );
 
             if (response.data.success) {
+                await update({ isOnboarding: true }); // Refreshing JWT with new value
+
                 toast.add({
                     title: "Success",
                     description: response.data.message,
@@ -129,24 +122,77 @@ const OnboardingPage = () => {
         };
     }, []);
 
-    const fetchStates = useCallback(async () => {
-        const response = await axios.get("/api/get-states");
+    const fetchCommodities = useCallback(async () => {
+        try {
+            const response = await axios.get<ApiResponse>(`/api/commodities`);
+            if (response.data.success && Array.isArray(response.data.data)) {
+                setCommodities(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching commodities ", error);
+            const axiosError = error as AxiosError<ApiResponse>;
+            const errorMessage =
+                axiosError.response?.data.error || "Error fetching commodities";
 
-        setStatesList(response.data.data?.states);
-    }, [setStatesList])
+            toast.add({
+                title: "Error",
+                description: errorMessage,
+                type: "error",
+            });
+        }
+    }, []);
 
-    const fetchDistricts = useCallback(async (stateCode: number) => {
-        const response = await axios.get(
-            `/api/get-districts?state=${stateCode}`,
-        );
+    const fetchLocations = useCallback(async () => {
+        try {
+            const response = await axios.get<ApiResponse>("/api/locations");
 
-        setDistrictsList(response.data.data?.districts);
-    }, [setDistrictsList])
+            if (response.data.success && Array.isArray(response.data.data))
+                setLocations(response.data.data);
+        } catch (error) {
+            console.error("Error fetching locations ", error);
+
+            const axiosError = error as AxiosError<ApiResponse>;
+
+            const errorMessage =
+                axiosError.response?.data.message || "Error fetching locations";
+
+            toast.add({
+                title: "Error",
+                description: errorMessage,
+                type: "error",
+            });
+        }
+    }, []);
 
     useEffect(() => {
-        //eslint-disable-next-line
-        fetchStates();
-    }, []);
+        fetchLocations();
+        fetchCommodities();
+    }, [fetchLocations, fetchCommodities]);
+
+    const statesList = useMemo(() => {
+        return Array.from(
+            new Set(
+                locations
+                    .map((item) => item.state)
+                    .filter((state): state is string => Boolean(state)),
+            ),
+        );
+    }, [locations]);
+
+    const districtsList = useMemo(() => {
+        if (!selectedState) return [];
+
+        return Array.from(
+            new Set(
+                locations
+                    .filter((item) => item.state === selectedState)
+                    .map((item) => item.district)
+                    .filter((district): district is string =>
+                        Boolean(district),
+                    ),
+            ),
+        );
+    }, [locations, selectedState]);
 
     return (
         <div className="h-full w-full flex justify-center items-center bg-transparent backdrop-blur-2xl rounded-md">
@@ -176,7 +222,8 @@ const OnboardingPage = () => {
                             <CardTitle>Complete your profile</CardTitle>
                         </div>
                         <CardDescription>
-                            Just a few details to personalize your prices and advisor.
+                            Just a few details to personalize your prices and
+                            advisor.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -185,269 +232,233 @@ const OnboardingPage = () => {
                             onSubmit={form.handleSubmit(onSubmit)}
                         >
                             <FieldGroup>
-                                        <Controller
-                                            name="mobileNumber"
-                                            control={form.control}
-                                            render={({ field, fieldState }) => (
-                                                <Field
-                                                    data-invalid={
-                                                        fieldState.invalid
-                                                    }
-                                                >
-                                                    <FieldLabel htmlFor="signup-form-number">
-                                                        Mobile Number
-                                                    </FieldLabel>
-                                                    <Input
-                                                        {...field}
-                                                        id="signup-form-number"
-                                                        aria-invalid={
-                                                            fieldState.invalid
-                                                        }
-                                                        placeholder="9876543210"
-                                                    />
-                                                    {fieldState.invalid && (
-                                                        <FieldError
-                                                            errors={[
-                                                                fieldState.error,
-                                                            ]}
-                                                        />
-                                                    )}
-                                                </Field>
+                                <Controller
+                                    name="mobileNumber"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldLabel htmlFor="signup-form-number">
+                                                Mobile Number
+                                            </FieldLabel>
+                                            <Input
+                                                {...field}
+                                                id="signup-form-number"
+                                                aria-invalid={
+                                                    fieldState.invalid
+                                                }
+                                                placeholder="9876543210"
+                                            />
+                                            {fieldState.invalid && (
+                                                <FieldError
+                                                    errors={[fieldState.error]}
+                                                />
                                             )}
-                                        />
-                                        <Controller
-                                            name="state"
-                                            control={form.control}
-                                            render={({ field, fieldState }) => (
-                                                <Field
-                                                    data-invalid={
-                                                        fieldState.invalid
-                                                    }
-                                                >
-                                                    <FieldLabel htmlFor="signup-form-state">
-                                                        State
-                                                    </FieldLabel>
-                                                    <Select
-                                                        defaultValue="Select Your State"
-                                                        value={field.value}
-                                                        onValueChange={(
-                                                            selectedState,
-                                                        ) => {
-                                                            field.onChange(
-                                                                selectedState,
-                                                            );
-
-                                                            const targetState =
-                                                                statesList.find(
-                                                                    (s) =>
-                                                                        s.state_name_english ===
-                                                                        selectedState,
-                                                                );
-                                                            if (targetState)
-                                                                fetchDistricts(
-                                                                    targetState.state_code,
-                                                                );
-                                                        }}
-                                                        items={statesList.map(
-                                                            (state) => ({
-                                                                label: state.state_name_english.toLocaleUpperCase(),
-                                                                value: state.state_name_english,
-                                                            }),
-                                                        )}
-                                                    >
-                                                        <SelectTrigger className="w-full">
-                                                            <SelectValue placeholder="Select Your State" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectGroup>
-                                                                <SelectLabel>
-                                                                    States
-                                                                </SelectLabel>
-                                                                {statesList.map(
-                                                                    (state) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                state.state_code
-                                                                            }
-                                                                            value={
-                                                                                state.state_name_english
-                                                                            }
-                                                                        >
-                                                                            {state.state_name_english.toLocaleUpperCase()}
-                                                                        </SelectItem>
-                                                                    ),
-                                                                )}
-                                                            </SelectGroup>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {fieldState.invalid && (
-                                                        <FieldError
-                                                            errors={[
-                                                                fieldState.error,
-                                                            ]}
-                                                        />
-                                                    )}
-                                                </Field>
-                                            )}
-                                        />
-                                        <Controller
-                                            name="district"
-                                            control={form.control}
-                                            render={({ field, fieldState }) => (
-                                                <Field
-                                                    data-invalid={
-                                                        fieldState.invalid
-                                                    }
-                                                >
-                                                    <FieldLabel htmlFor="signup-form-district">
-                                                        District
-                                                    </FieldLabel>
-                                                    <Select
-                                                        defaultValue="Select Your District"
-                                                        value={field.value}
-                                                        onValueChange={
-                                                            field.onChange
-                                                        }
-                                                        items={districtsList.map(
-                                                            (district) => ({
-                                                                label: district.district_name_english.toLocaleUpperCase(),
-                                                                value: district.district_name_english,
-                                                            }),
-                                                        )}
-                                                    >
-                                                        <SelectTrigger className="w-full">
-                                                            <SelectValue placeholder="Select Your District" />
-                                                        </SelectTrigger>
-                                                        <SelectContent>
-                                                            <SelectGroup>
-                                                                <SelectLabel>
-                                                                    Districts
-                                                                </SelectLabel>
-                                                                {districtsList.map(
-                                                                    (
-                                                                        district,
-                                                                    ) => (
-                                                                        <SelectItem
-                                                                            key={
-                                                                                district.district_code
-                                                                            }
-                                                                            value={
-                                                                                district.district_name_english
-                                                                            }
-                                                                        >
-                                                                            {district.district_name_english.toLocaleUpperCase()}
-                                                                        </SelectItem>
-                                                                    ),
-                                                                )}
-                                                            </SelectGroup>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    {fieldState.invalid && (
-                                                        <FieldError
-                                                            errors={[
-                                                                fieldState.error,
-                                                            ]}
-                                                        />
-                                                    )}
-                                                </Field>
-                                            )}
-                                        />
-                                        {/* Crop Preferences Multi-Select Checkboxes */}
-                                        <Controller
-                                            name="cropPreferences"
-                                            control={form.control}
-                                            render={({ field, fieldState }) => (
-                                                <Field
-                                                    data-invalid={
-                                                        fieldState.invalid
-                                                    }
-                                                >
-                                                    <FieldLabel>
-                                                        Preferred Crops
-                                                    </FieldLabel>
-                                                    <div className="grid grid-cols-2 gap-2 max-h-36 overflow-y-auto p-2 border rounded-md">
-                                                        {cropsList.map(
-                                                            (crop) => (
-                                                                <label
-                                                                    key={
-                                                                        crop.value
+                                        </Field>
+                                    )}
+                                />
+                                <Controller
+                                    name="state"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldLabel htmlFor="signup-form-state">
+                                                State
+                                            </FieldLabel>
+                                            <Select
+                                                defaultValue="Select Your State"
+                                                value={field.value}
+                                                onValueChange={(
+                                                    selectedState,
+                                                ) =>
+                                                    field.onChange(
+                                                        selectedState,
+                                                    )
+                                                }
+                                                items={statesList.map(
+                                                    (state) => ({
+                                                        label: state,
+                                                        value: state,
+                                                    }),
+                                                )}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select Your State" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectLabel>
+                                                            States
+                                                        </SelectLabel>
+                                                        {statesList.map(
+                                                            (state, idx) => (
+                                                                <SelectItem
+                                                                    key={idx}
+                                                                    value={
+                                                                        state
                                                                     }
-                                                                    className="flex items-center gap-2 text-sm cursor-pointer"
                                                                 >
-                                                                    <Checkbox
-                                                                        checked={field.value?.includes(
-                                                                            crop.value,
-                                                                        )}
-                                                                        onCheckedChange={(
-                                                                            checked,
-                                                                        ) => {
-                                                                            return checked
-                                                                                ? field.onChange(
-                                                                                      [
-                                                                                          ...(field.value ||
-                                                                                              []),
-                                                                                          crop.value,
-                                                                                      ],
-                                                                                  )
-                                                                                : field.onChange(
-                                                                                      field.value?.filter(
-                                                                                          (
-                                                                                              v,
-                                                                                          ) =>
-                                                                                              v !==
-                                                                                              crop.value,
-                                                                                      ),
-                                                                                  );
-                                                                        }}
-                                                                    />
-                                                                    <span>
-                                                                        {
-                                                                            crop.value
-                                                                        }
-                                                                    </span>
-                                                                </label>
+                                                                    {state}
+                                                                </SelectItem>
                                                             ),
                                                         )}
-                                                    </div>
-                                                    <div className="text-white">
-                                                        <span className="font-semibold">
-                                                            Selected:
-                                                        </span>{" "}
-                                                        {field.value.join(", ")}
-                                                    </div>
-                                                    {fieldState.invalid && (
-                                                        <FieldError
-                                                            errors={[
-                                                                fieldState.error,
-                                                            ]}
-                                                        />
-                                                    )}
-                                                </Field>
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            {fieldState.invalid && (
+                                                <FieldError
+                                                    errors={[fieldState.error]}
+                                                />
                                             )}
-                                        />
+                                        </Field>
+                                    )}
+                                />
+                                <Controller
+                                    name="district"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldLabel htmlFor="signup-form-district">
+                                                District
+                                            </FieldLabel>
+                                            <Select
+                                                defaultValue="Select Your District"
+                                                value={field.value}
+                                                onValueChange={field.onChange}
+                                                items={districtsList.map(
+                                                    (district) => ({
+                                                        label: district,
+                                                        value: district,
+                                                    }),
+                                                )}
+                                                disabled={!selectedState}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue
+                                                        placeholder={
+                                                            selectedState
+                                                                ? "Select Your District"
+                                                                : "Select State First"
+                                                        }
+                                                    />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectGroup>
+                                                        <SelectLabel>
+                                                            Districts
+                                                        </SelectLabel>
+                                                        {districtsList.map(
+                                                            (district, idx) => (
+                                                                <SelectItem
+                                                                    key={idx}
+                                                                    value={
+                                                                        district
+                                                                    }
+                                                                >
+                                                                    {district}
+                                                                </SelectItem>
+                                                            ),
+                                                        )}
+                                                    </SelectGroup>
+                                                </SelectContent>
+                                            </Select>
+                                            {fieldState.invalid && (
+                                                <FieldError
+                                                    errors={[fieldState.error]}
+                                                />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
+                                {/* Crop Preferences Multi-Select Checkboxes */}
+                                <Controller
+                                    name="cropPreferences"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <Field
+                                            data-invalid={fieldState.invalid}
+                                        >
+                                            <FieldLabel>
+                                                Preferred Crops
+                                            </FieldLabel>
+                                            <div className="grid grid-cols-1 gap-2 max-h-36 overflow-y-auto p-2 border rounded-md">
+                                                {commodities.map((crop) => (
+                                                    <label
+                                                        key={crop.id}
+                                                        className="flex items-center gap-2 text-sm cursor-pointer"
+                                                    >
+                                                        <Checkbox
+                                                            checked={field.value?.includes(
+                                                                crop.name!,
+                                                            )}
+                                                            onCheckedChange={(
+                                                                checked,
+                                                            ) => {
+                                                                return checked
+                                                                    ? field.onChange(
+                                                                          [
+                                                                              ...(field.value ||
+                                                                                  []),
+                                                                              crop.name,
+                                                                          ],
+                                                                      )
+                                                                    : field.onChange(
+                                                                          field.value?.filter(
+                                                                              (
+                                                                                  v,
+                                                                              ) =>
+                                                                                  v !==
+                                                                                  crop.name,
+                                                                          ),
+                                                                      );
+                                                            }}
+                                                        />
+                                                        <span>{crop.name}</span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <div className="text-white">
+                                                <span className="font-semibold">
+                                                    Selected:
+                                                </span>{" "}
+                                                {field.value.join(", ")}
+                                            </div>
+                                            {fieldState.invalid && (
+                                                <FieldError
+                                                    errors={[fieldState.error]}
+                                                />
+                                            )}
+                                        </Field>
+                                    )}
+                                />
                             </FieldGroup>
                         </form>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-3 mt-3">
-                                <Button
-                                    type="submit"
-                                    form="signup-form"
-                                    disabled={isSubmitting}
-                                    className="w-1/2 flex items-center justify-center gap-2 rounded-md"
-                                >
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Submitting...
-                                        </>
-                                    ) : (
-                                        "Get Started"
-                                    )}
-                                </Button>
+                        <Button
+                            type="submit"
+                            form="signup-form"
+                            disabled={isSubmitting}
+                            className="w-1/2 flex items-center justify-center gap-2 rounded-md"
+                        >
+                            {isSubmitting ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Submitting...
+                                </>
+                            ) : (
+                                "Get Started"
+                            )}
+                        </Button>
                     </CardFooter>
                 </Card>
             </div>
         </div>
     );
 };
-export default OnboardingPage
+export default OnboardingPage;

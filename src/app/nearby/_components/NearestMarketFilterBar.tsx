@@ -6,6 +6,8 @@ import axios, { AxiosError } from "axios";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
+import { Commodity } from "@/types/Commodities";
+import { LocationItem } from "@/types/Locations";
 
 //ShadCn Components
 import {
@@ -26,16 +28,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { CalendarIcon, Search } from "lucide-react";
-
-export interface Commodity {
-  id?: string;
-  name?: string;
-}
-
-export interface LocationItem {
-  state?: string;
-  district?: string;
-}
 
 export const NearestMarketFilterBar = () => {
   const router = useRouter();
