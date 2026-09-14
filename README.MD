@@ -1,11 +1,11 @@
-# [KisanDisha 🧭](#)
+# [KisanDisha 🧭](https://kisandisha.vercel.app)
 
 <p align="center">
-  <strong>An AI-powered market intelligence platform for Indian farmers, built with Next.js, TypeScript, and real government price data.</strong>
+  <strong>AI-powered market intelligence for Indian farmers - real government mandi data, grounded price comparisons, and a tool-calling AI advisor that recommends where to sell.</strong>
 </p>
 
 <p align="center">
-  <a href="#">🌐 Live Demo</a> •
+  <a href="https://kisandisha.vercel.app">🌐 Live Demo</a> •
   <a href="https://github.com/vaidikdubey/KisanDisha">📂 Repository</a>
 </p>
 
@@ -13,278 +13,116 @@
 
 ## 📖 Overview
 
-KisanDisha turns raw, publicly available government market price data
-(data.gov.in / Agmarknet) into a straight answer for farmers: where should
-I actually sell this crop, right now. Prices are ingested daily and
-automatically, compared across markets, and an AI advisor reasons over
-real price, trend, and proximity data to recommend the best option - no
-account required to browse prices, full features behind a lightweight login.
+Indian farmers have no easy way to compare what a crop is worth across nearby markets on a given day - the government publishes this data publicly (data.gov.in / Agmarknet), but it's raw and unusable in the field. KisanDisha turns it into a direct answer: live price comparison, a nearest-markets ranking, and an AI advisor you can ask in plain language.
 
----
+## 📸 Screenshots
+
+| Landing | AI Advisor | Nearest Markets |
+|---|---|---|
+| ![Landing](./docs/images/landing.png) | ![Advisor](./docs/images/advisor.png) | ![Nearby](./docs/images/nearby.png) |
+
+| Prices | Price Trends |
+|---|---|
+| ![Prices](./docs/images/prices.png) | ![Profile](./docs/images/trends.png) |
 
 ## ✨ Features
 
-### 🌾 Live Market Data
+**Auth** - email/password and Google OAuth, with a dedicated onboarding flow (state, district, crop preferences, mobile number) for new users regardless of signup method, forgot/reset password included.
 
-- Daily, automated ingestion from the government's Agmarknet API
-- Historical prices backfilled from public 2023–2025 data, so trends work from day one
-- Row-level validation - bad or missing data is surfaced, not silently dropped
+**Price Comparison** (`/prices`) - filter by commodity, state, district, and date range; paginated results table with min/max/modal price per market, plus a price trend graph along with table row based toggle to view trends for a specific market.
 
-### 📊 Price Comparison
+**Nearest Markets** (`/nearby`) - for a chosen commodity and location, ranks markets by district-then-state proximity and modal price, so the highest-value nearby option surfaces first.
 
-- Filter by crop, sort by price or trend
-- Nearest markets with best price, ranked by region
-
-### 🤖 AI Selling Advisor
-
-- Ask in plain language: *"500kg tomatoes near Bhopal, where do I sell?"*
-- Powered by the **Google Gemini API** with tool-calling - the agent
-  queries live price, trend, and proximity data rather than guessing
-- Accuracy tracked against a written evaluation set, not just demoed
-
-### 👤 User Profile
-
-- Home region and crop preferences, used to personalize the advisor and
-  the nearest-market view
-
-### ⚙️ Reliability by Design
-
-- Idempotent ingestion - a retried or failed job never creates duplicate records
-- Retry/backoff against real external API rate limits
-- Rate limiting on public endpoints
-- Redis caching on comparison queries, invalidated on each ingestion run
-
----
+**AI Selling Advisor** (`/chat`) - ask a real question ("500kg tomatoes near Bhopal, where should I sell?") and get a grounded recommendation. Built on Gemini's tool-calling: the agent calls structured functions (`get_prices`, `get_price_trends`, `get_nearest_market`, `get_available_commodities`, `get_available_locations`, `get_data_freshness`) against live Postgres data rather than answering from general knowledge - every response is traceable to real data, not hallucinated. Handles ambiguous questions, missing data, and out-of-scope requests gracefully, with a system prompt that keeps it focused on crop-selling decisions and redirects to other app pages when relevant.
 
 ## 🛠️ Tech Stack
 
-### Frontend
+- **Frontend/API**: Next.js, TypeScript, Tailwind CSS, shadcn/ui
+- **Database**: PostgreSQL (Supabase, transaction pooler), Prisma ORM with the driver-adapter pattern (`@prisma/adapter-pg`)
+- **Cache & rate limiting**: Upstash Redis
+- **Scheduled ingestion**: AWS Lambda + EventBridge, running twice daily
+- **AI**: Google Gemini API, function/tool-calling
+- **Testing**: Vitest, against an isolated Docker Postgres instance
+- **Deployment**: Vercel
 
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
+## ⚙️ Reliability & Engineering Highlights
 
-### Backend
+- **Idempotent ingestion** - daily price data ingested via a scheduled Lambda function with retry/backoff against real API rate limits, and idempotent upserts (unique constraint on commodity + market + date + variety) so a retried or duplicate run never creates duplicate records - proven by an automated test, not just claimed.
+- **Automated test suite** (Vitest) - 5 tests covering idempotency, retry/backoff behavior under simulated API failure, an end-to-end happy path (ingestion → query), and an end-to-end failure-recovery path (a fully failed run followed by a successful one, verified to leave the database in a correct final state).
+- **Caching, with measured impact** - cache-aside pattern (Redis) on all read-heavy endpoints. Real measured results:
 
-- Next.js API Routes
-- PostgreSQL (Neon)
-- Prisma ORM
-- Redis (Upstash)
+  | Endpoint | Cache miss | Cache hit |
+  |---|---|---|
+  | /commodities | 444ms | 0.72ms |
+  | /locations | 295ms | 0.88ms |
+  | /freshness | 574ms | 0.62ms |
+  | /prices | 316ms | 0.61ms |
+  | /trends | 95ms | 0.50ms |
+  | /nearby | 656ms | 0.40ms |
 
-### Ingestion & Infra
-
-- AWS Lambda + EventBridge (scheduled daily ingestion)
-- data.gov.in / Agmarknet API
-
-### AI
-
-- Google Gemini API (tool-calling agent)
-
-### Deployment
-
-- Vercel (web/API)
-
----
+- **Rate limiting** - sliding-window limits (Upstash Ratelimit) on the AI advisor endpoint specifically protect a finite daily LLM quota from being exhausted by burst traffic, with a looser limit on read-only endpoints as general anti-abuse.
+- **Resilient by design, not just in theory** - the twice-daily ingestion schedule means a single failed run (network timeout, API downtime) self-heals on the next scheduled run without manual intervention, verified in production during actual development.
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- Node.js 18+
-- npm / pnpm / yarn
-- PostgreSQL database (Neon recommended)
-- Redis instance (Upstash recommended)
-- Google Gemini API key
-- data.gov.in API key
-
-### Clone the Repository
-
 ```bash
 git clone https://github.com/vaidikdubey/KisanDisha.git
-
 cd KisanDisha
-```
-
-### Install Dependencies
-
-```bash
 npm install
-```
-
-### Configure Environment Variables
-
-Create a `.env.local` file in the root directory.
-
-```env
-DATABASE_URL=
-
-REDIS_URL=
-
-NEXTAUTH_SECRET=
-
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-
-GEMINI_API_KEY=
-
-AGMARKNET_API_KEY=
-```
-
-> **Note:** Replace the values above with your own credentials before running the project.
-
-### Run the Development Server
-
-```bash
+cp .env.example .env
+# Required: DATABASE_URL, GEMINI_API_KEY, LGD_GOV_API_KEY (data.gov.in),
+# UPSTASH_REDIS_REST_URL, UPSTASH_REDIS_REST_TOKEN,
+# GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET,
+# NEXTAUTH_SECRET, RESEND_API_KEY
+npx prisma generate
+npx prisma db push
 npm run dev
 ```
 
-Visit:
-
-```link
-http://localhost:3000
+Run tests (spins up against a separate Docker Postgres instance - see `.env.test`):
+```bash
+npm run test
 ```
-
----
 
 ## 📂 Project Structure
 
 ```text
-KisanDisha/
-│
+kisandisha/
 ├── src/
-│   ├── app/
-│   ├── components/
+│   ├── app/                   # Next.js App Router pages & API routes
 │   ├── lib/
-│   │   ├── agent/          # AI advisor tool definitions + reasoning loop
-│   │   ├── ingestion/      # Agmarknet fetch, validation, upsert logic
-│   ├── models/ (or prisma/schema.prisma)
-│   ├── types/
-│   ├── middleware.ts
-│   └── ...
-│
-├── worker/                 # AWS Lambda ingestion handler
-├── public/
-├── .env.local
-├── next.config.ts
-├── package.json
-└── tsconfig.json
+│   │   ├── agent/             # AI advisor: tool declarations, system prompt, reasoning loop
+│   │   ├── queries/           # Shared DB query functions (prices, nearest markets)
+│   │   ├── ratelimit.ts
+│   │   ├── cache.ts
+│   │   ├── runIngestion.ts
+│   │   └── prisma.ts
+│   ├── generated/prisma/      # Generated Prisma client
+│   └── proxy.ts               # Route protection, onboarding enforcement
+├── lambda/handler.ts          # AWS Lambda entry point for scheduled ingestion
+├── scripts/                   # Standalone runnable scripts (manual ingestion trigger, etc.)
+├── prisma/schema.prisma
+└── src/lib/tests/             # Vitest test suite
 ```
 
----
+## 🔮 Roadmap
 
-## ⚡ Reliability & Performance
+**V2**: true geocoded distance ranking, price alerts, broader crop/state coverage, trend forecasting, multi-user/cooperative accounts, a React Native mobile app.
 
-- Idempotent upserts on ingestion - safe to retry, never duplicates
-- Retry/backoff against real API rate limits
-- Cache-aside pattern on frequent price queries
-- Structured logging tagged with job IDs, so a failed ingestion run is traceable
-
----
-
-## 🔒 Authentication
-
-Lightweight auth - enough to personalize the advisor and save region/crop
-preferences. Price browsing itself requires no account.
-
----
-
-## 🤖 AI Integration
-
-The advisor is a tool-calling agent, not a wrapped prompt. It calls
-structured functions - `get_prices`, `get_trend`, `get_nearby_markets` -
-against the same database the UI reads from, so every recommendation is
-grounded in real, current data. Accuracy is measured against a written
-evaluation set of realistic scenarios.
-
----
-
-## 📸 Application Workflow
-
-```text
-Daily Scheduled Trigger (AWS EventBridge)
-    │
-    ▼
-Lambda Fetches Agmarknet Prices
-    │
-    ▼
-Validate + Idempotent Upsert → PostgreSQL
-    │
-    ▼
-User Browses Prices / Asks the Advisor
-    │
-    ▼
-Advisor Calls Tools (price, trend, proximity)
-    │
-    ▼
-Grounded Recommendation Returned
-```
-
----
-
-## 🌐 Live Demo
-
-**Website**
-[KisanDisha](#)
-
----
-
-## 📦 Repository
-
-**GitHub**
-[KisanDisha-Github](https://github.com/vaidikdubey/KisanDisha)
-
----
-
-## 🔮 Future Improvements
-
-- True geocoded distance ranking (currently district/state-level)
-- Price alerts on threshold crossing
-- Broader crop and state coverage
-- Trend forecasting
-- Multi-user / cooperative accounts
-- Mobile app (React Native - Android + iOS)
-- Vendor directory and price comparison for farm inputs (seeds, fertilizer, pesticides)
-- Marketplace features (listings, orders)
-- Logistics coordination
-
----
+**V3**: vendor directory and price comparison for farm inputs (seeds, fertilizer, pesticides), marketplace features, logistics coordination.
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are welcome.
-
-If you'd like to contribute:
-
-1. Fork the repository
-2. Create a feature branch
-
-```bash
-git checkout -b feature/amazing-feature
-```
-
-3. Commit your changes
-
-```bash
-git commit -m "Added amazing feature"
-```
-
-4. Push to your branch
-
-```bash
-git push origin feature/amazing-feature
-```
-
-5. Open a pull request
+Contributions welcome - fork, branch, commit, push, open a PR.
 
 ## 👨‍💻 Author
 
 **Vaidik Dubey**
 
-- GitHub: https://github.com/vaidikdubey
-- LinkedIn: https://www.linkedin.com/in/vaidik-dubey/
+· GitHub: https://github.com/vaidikdubey 
+
+· LinkedIn: https://www.linkedin.com/in/vaidik-dubey/
 
 ---
 
-<p align="center">
-Built with ❤️ using Next.js, TypeScript, PostgreSQL, AWS Lambda, Redis, and Google Gemini AI.
-</p>
+<p align="center">Built with ❤️ using Next.js, TypeScript, PostgreSQL, AWS Lambda, Redis, and Google Gemini AI.</p>
