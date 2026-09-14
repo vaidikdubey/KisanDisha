@@ -9,6 +9,7 @@
     "lint": "eslint",
     "ingest": "tsx scripts/ingest.ts",
     "test": "vitest run",
+    "postinstall": "prisma generate",
     "build:lambda": "npx esbuild lambda/handler.ts --bundle --platform=node --target=node20 --format=cjs --outfile=dist-lambda/handler.js --define:import.meta.url=\"file:///var/task/handler.js\""
   },
   "dependencies": {
