@@ -3,7 +3,7 @@
 import { toast } from "@/components/ui/toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios, { AxiosError } from "axios";
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import Link from "next/link";
@@ -93,7 +93,8 @@ const ResetPasswordPage = () => {
     };
 
     return (
-        <div className="h-full w-full flex justify-center items-center bg-transparent backdrop-blur-2xl rounded-md min-h-screen p-4">
+        <Suspense fallback={<div>Loading reset password page...</div>}>
+            <div className="h-full w-full flex justify-center items-center bg-transparent backdrop-blur-2xl rounded-md min-h-screen p-4">
             <Card className="w-full max-w-md tracking-tight bg-transparent backdrop-blur-xl rounded-xl z-10 shadow-md">
                 <CardHeader>
                     <CardTitle className="text-xl font-semibold">
@@ -241,6 +242,7 @@ const ResetPasswordPage = () => {
                 </CardFooter>
             </Card>
         </div>
+        </Suspense>
     );
 };
 
