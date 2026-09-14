@@ -84,6 +84,12 @@ export async function PATCH(request: NextRequest): Promise<Response> {
             cropPreferences,
         } = await request.json();
 
+        const existingUser = await prisma.user.findUnique({
+            where: {
+                id: user.id,
+            },
+        });
+
         const updateData: Prisma.UserUpdateInput = {};
 
         if (name) updateData["name"] = name;
@@ -92,13 +98,7 @@ export async function PATCH(request: NextRequest): Promise<Response> {
         if (district) updateData["district"] = district;
         if (cropPreferences) updateData["cropPreferences"] = cropPreferences;
 
-        const existingUser = await prisma.user.findUnique({
-            where: {
-                id: user.id,
-            },
-        });
-
-        if (email) {
+        if (email && email !== existingUser?.email) {
             const existingEmailUser = await prisma.user.findUnique({
                 where: {
                     email,

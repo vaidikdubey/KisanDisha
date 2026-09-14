@@ -261,7 +261,7 @@ export const NearestMarketFilterBar = () => {
         className="w-full sm:w-auto sm:px-8 mx-auto bg-emerald-600 hover:bg-emerald-700 text-white rounded-md"
       >
         <Search className="w-4 h-4 mr-2" />
-        Get Nearest Prices
+        Get Nearest Markets
       </Button>
     </div>
   );
