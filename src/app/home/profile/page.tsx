@@ -9,10 +9,8 @@ import axios, { AxiosError } from "axios";
 import { toast } from "@/components/ui/toast";
 import { ApiResponse } from "@/types/ApiResponse";
 import { updateProfileSchema } from "@/schemas/updateProfileSchema";
-import {
-    Commodity,
-    LocationItem,
-} from "@/app/nearby/_components/NearestMarketFilterBar";
+import { Commodity } from "@/types/Commodities";
+import { LocationItem } from "@/types/Locations";
 import { cn } from "cn";
 
 // ShadCn Components
@@ -195,7 +193,10 @@ export default function ProfilePage() {
     const onSubmit = async (data: ProfileFormValues) => {
         setIsSubmitting(true);
         try {
-            const response = await axios.patch<ApiResponse>("/api/profile", data);
+            const response = await axios.patch<ApiResponse>(
+                "/api/profile",
+                data,
+            );
 
             if (response.data.success) {
                 setUser((prev) => ({ ...prev, ...data }));
