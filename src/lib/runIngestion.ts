@@ -11,7 +11,7 @@ function parseDate(date: string): Date {
   return new Date(year, month - 1, day);
 }
 
-async function fetchWithRetry(state: string, date: string, offset: number, retries = 3) {
+export async function fetchWithRetry(state: string, date: string, offset: number, retries = 3) {
   for (let i = 0; i < retries; i++) {
     try {
       return await axios.get(`https://api.data.gov.in/resource/${RESOURCE_ID}`, {
