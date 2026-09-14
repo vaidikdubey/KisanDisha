@@ -114,7 +114,7 @@ export async function POST(request: Request): Promise<Response> {
             data: {
                 verificationCode: null,
                 verificationCodeExpiry: new Date(0),
-                emailVerified: new Date(Date.now()),
+                emailVerified: new Date(),
             },
         });
 

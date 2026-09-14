@@ -98,7 +98,7 @@ export default function ProfilePage() {
     const [locations, setLocations] = useState<LocationItem[]>([]);
     const [commodities, setCommodities] = useState<Commodity[]>([]);
 
-    const isVerified = Boolean(user.emailVerified);
+    const isVerified: boolean = Boolean(user.emailVerified) ?? false;
 
     const {
         register,

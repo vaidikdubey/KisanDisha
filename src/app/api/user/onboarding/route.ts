@@ -36,6 +36,7 @@ export async function POST(req: Request): Promise<Response> {
                 state,
                 district,
                 cropPreferences: cropPreferences || [],
+                emailVerified: new Date(),
                 mobileNumber: mobileNumber || null,
                 isOnboarding: true,
                 provider: "GOOGLE",
